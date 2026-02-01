@@ -1,0 +1,17 @@
+node_modules
+.next
+.env
+.env.local
+.env.*.local
+
+# Generated files
+/lib/generated/prisma
+tsconfig.tsbuildinfo
+
+# Database files
+*.db
+
+# Agent skill files (auto-generated)
+.agents
+.claude
+.github/skills

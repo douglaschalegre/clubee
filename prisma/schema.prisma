@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MembershipRole {
+  organizer
+  member
+}
+
+enum MembershipStatus {
+  active
+  inactive
+}
+
+model User {
+  id        String   @id @default(cuid())
+  auth0Id   String   @unique @map("auth0_id")
+  name      String
+  email     String   @unique
+  phone     String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  memberships    Membership[]
+  organizedClubs Club[]       @relation("ClubOrganizer")
+
+  @@map("users")
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?  @map("image_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  organizerId String @map("organizer_id")
+  organizer   User   @relation("ClubOrganizer", fields: [organizerId], references: [id])
+
+  memberships Membership[]
+
+  @@map("clubs")
+}
+
+model Membership {
+  id                   String           @id @default(cuid())
+  role                 MembershipRole   @default(member)
+  status               MembershipStatus @default(active)
+  stripeSubscriptionId String?          @map("stripe_subscription_id")
+  currentPeriodEnd     DateTime?        @map("current_period_end")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clubId String @map("club_id")
+  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId])
+  @@index([clubId])
+  @@index([status])
+  @@map("memberships")
+}
