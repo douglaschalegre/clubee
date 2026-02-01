@@ -18,14 +18,15 @@ enum MembershipStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  auth0Id   String   @unique @map("auth0_id")
-  name      String
-  email     String   @unique
-  phone     String?
-  avatarUrl String?  @map("avatar_url")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(cuid())
+  auth0Id          String   @unique @map("auth0_id")
+  name             String
+  email            String   @unique
+  phone            String?
+  avatarUrl        String?  @map("avatar_url")
+  stripeCustomerId String?  @unique @map("stripe_customer_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   memberships    Membership[]
   organizedClubs Club[]       @relation("ClubOrganizer")

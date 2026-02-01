@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 interface JoinButtonProps {
@@ -9,7 +8,6 @@ interface JoinButtonProps {
 }
 
 export function JoinButton({ clubId }: JoinButtonProps) {
-  const router = useRouter();
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,20 +16,29 @@ export function JoinButton({ clubId }: JoinButtonProps) {
     setError(null);
 
     try {
-      const res = await fetch(`/api/clubs/${clubId}/join`, {
+      const res = await fetch("/api/stripe/checkout", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ clubId }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to join club");
+        throw new Error(data.error || "Failed to create checkout session");
       }
 
-      router.push(`/clubs/${clubId}/members`);
-      router.refresh();
+      const { url } = await res.json();
+      
+      if (url) {
+        // Redirect to Stripe checkout
+        window.location.href = url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
       setIsJoining(false);
     }
   }
@@ -41,8 +48,8 @@ export function JoinButton({ clubId }: JoinButtonProps) {
       {error && (
         <p className="mb-4 text-sm text-red-600">{error}</p>
       )}
-      <Button onClick={handleJoin} disabled={isJoining} size="lg">
-        {isJoining ? "Joining..." : "Join Club"}
+      <Button onClick={handleJoin} disabled={isJoining} size="lg" className="w-full">
+        {isJoining ? "Redirecting to payment..." : "Join Club - Subscribe"}
       </Button>
     </div>
   );

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClubAvatar } from "@/components/club-avatar";
 import { MembershipStatusBadge } from "@/components/membership-status-badge";
+import { LeaveButton } from "@/components/leave-button";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -104,6 +105,10 @@ export default async function ClubDetailPage({ params }: PageProps) {
               <Button variant="secondary" disabled>
                 Membership Inactive
               </Button>
+            )}
+
+            {isActiveMember && !isOrganizer && (
+              <LeaveButton clubId={id} />
             )}
 
             {isOrganizer && (

@@ -77,9 +77,10 @@ export default async function JoinClubPage({ params }: PageProps) {
           )}
 
           <div className="rounded-lg bg-muted p-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              Joining this club will give you access to the members list and
-              club activities.
+            <p className="text-lg font-semibold">Membership Subscription</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Joining this club requires a paid subscription. You&apos;ll be
+              redirected to our secure payment page.
             </p>
           </div>
 
