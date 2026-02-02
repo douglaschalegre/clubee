@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ClubAvatar } from "@/components/club-avatar";
 import { MembershipStatusBadge } from "@/components/membership-status-badge";
 import { LeaveButton } from "@/components/leave-button";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -58,6 +59,13 @@ export default async function ClubDetailPage({ params }: PageProps) {
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Clubs", href: "/clubs" },
+          { label: club.name },
+        ]}
+      />
+
       {/* Club Header */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
         <ClubAvatar

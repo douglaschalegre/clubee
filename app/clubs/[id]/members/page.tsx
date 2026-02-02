@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { MemberCard } from "@/components/member-card";
 import { MembershipToggle } from "@/components/membership-toggle";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -78,17 +79,18 @@ export default async function MembersPage({ params }: PageProps) {
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Clubs", href: "/clubs" },
+          { label: club.name, href: `/clubs/${clubId}` },
+          { label: "Members" },
+        ]}
+      />
+
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link href={`/clubs/${clubId}`} className="hover:underline">
-              {club.name}
-            </Link>
-            <span>/</span>
-            <span>Members</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold">
+          <h1 className="text-2xl font-bold">
             Members ({memberships.length})
           </h1>
         </div>

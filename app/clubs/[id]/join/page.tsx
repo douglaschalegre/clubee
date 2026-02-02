@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClubAvatar } from "@/components/club-avatar";
 import { JoinButton } from "@/components/join-button";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -59,6 +60,13 @@ export default async function JoinClubPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-lg">
+      <Breadcrumb
+        items={[
+          { label: "Clubs", href: "/clubs" },
+          { label: club.name, href: `/clubs/${id}` },
+          { label: "Join" },
+        ]}
+      />
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">

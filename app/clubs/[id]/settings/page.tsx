@@ -8,6 +8,7 @@ import { ClubForm } from "@/components/club-form";
 import { DeleteClubButton } from "@/components/delete-club-button";
 import { MemberCard } from "@/components/member-card";
 import { MembershipToggle } from "@/components/membership-toggle";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -76,17 +77,18 @@ export default async function SettingsPage({ params }: PageProps) {
 
   return (
     <div className="space-y-8">
+      <Breadcrumb
+        items={[
+          { label: "Clubs", href: "/clubs" },
+          { label: club.name, href: `/clubs/${clubId}` },
+          { label: "Settings" },
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link href={`/clubs/${clubId}`} className="hover:underline">
-              {club.name}
-            </Link>
-            <span>/</span>
-            <span>Settings</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold">Club Settings</h1>
+          <h1 className="text-2xl font-bold">Club Settings</h1>
         </div>
         <Button variant="outline" asChild>
           <Link href={`/clubs/${clubId}`}>Back to Club</Link>
