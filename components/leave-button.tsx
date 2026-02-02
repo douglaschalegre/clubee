@@ -1,7 +1,18 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface LeaveButtonProps {
   clubId: string;
@@ -10,14 +21,9 @@ interface LeaveButtonProps {
 export function LeaveButton({ clubId }: LeaveButtonProps) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
-  async function handleLeave(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!confirm("Leave this club? Your membership will be canceled.")) {
-      return;
-    }
-
+  async function handleLeave() {
     setIsLeaving(true);
     setError(null);
 
@@ -43,25 +49,39 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setIsLeaving(false);
+      setOpen(false);
     }
   }
 
   return (
-    <form
-      action={`/api/clubs/${clubId}/leave`}
-      method="post"
-      onSubmit={handleLeave}
-    >
-      {error && (
-        <p className="mb-2 text-sm text-red-600">{error}</p>
-      )}
-      <Button
-        type="submit"
-        disabled={isLeaving}
-        variant="outline"
-      >
-        {isLeaving ? "Leaving..." : "Leave Club"}
-      </Button>
-    </form>
+    <div>
+      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" disabled={isLeaving}>
+            {isLeaving ? "Leaving..." : "Leave Club"}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this club?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your membership will be canceled and you will lose access to club
+              content. You can rejoin later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLeaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeave}
+              disabled={isLeaving}
+              variant="destructive"
+            >
+              {isLeaving ? "Leaving..." : "Leave Club"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
