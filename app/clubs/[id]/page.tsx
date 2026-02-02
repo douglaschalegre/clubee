@@ -115,7 +115,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
               </Button>
             )}
 
-            {isActiveMember && !isOrganizer && (
+            {isMember && !isOrganizer && (
               <LeaveButton clubId={id} />
             )}
 
