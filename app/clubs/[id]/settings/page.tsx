@@ -8,8 +8,9 @@ import { ClubForm } from "@/components/club-form";
 import { DeleteClubButton } from "@/components/delete-club-button";
 import { MemberCard } from "@/components/member-card";
 import { MembershipToggle } from "@/components/membership-toggle";
+import { TransferOwnership } from "@/components/transfer-ownership";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { ArrowLeft, Settings, AlertTriangle, Wrench } from "lucide-react";
+import { ArrowLeft, Settings, AlertTriangle, Wrench, Users } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -55,7 +56,7 @@ export default async function SettingsPage({ params }: PageProps) {
     redirect(`/clubs/${clubId}`);
   }
 
-  // Fetch members for dev tools (only non-organizer members)
+  // Fetch members for dev tools and transfer ownership (excluding current organizer)
   const memberships = await prisma.membership.findMany({
     where: {
       clubId,
@@ -73,6 +74,12 @@ export default async function SettingsPage({ params }: PageProps) {
       },
     },
   });
+
+  const memberList = memberships.map((m) => ({
+    id: m.user.id,
+    name: m.user.name,
+    email: m.user.email,
+  }));
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -129,6 +136,22 @@ export default async function SettingsPage({ params }: PageProps) {
               imageUrl: club.imageUrl,
             }}
           />
+        </CardContent>
+      </Card>
+
+      {/* Transfer Ownership */}
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/30">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Users className="h-5 w-5" />
+            Transferir propriedade
+          </CardTitle>
+          <CardDescription>
+            Transfira a propriedade deste clube para outro membro.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <TransferOwnership clubId={clubId} members={memberList} />
         </CardContent>
       </Card>
 
