@@ -24,16 +24,15 @@ export function JoinButton({ clubId }: JoinButtonProps) {
         body: JSON.stringify({ clubId }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed to create checkout session");
       }
-
-      const { url } = await res.json();
       
-      if (url) {
+      if (data.url) {
         // Redirect to Stripe checkout
-        window.location.href = url;
+        window.location.href = data.url;
       } else {
         throw new Error("No checkout URL returned");
       }
