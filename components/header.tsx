@@ -68,7 +68,7 @@ export async function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem asChild>
-                    <Link href="/my-clubs">Meus clubes</Link>
+                    <Link href="/my-clubs?view=organizing">Meus clubes</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
