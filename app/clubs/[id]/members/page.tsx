@@ -7,6 +7,7 @@ import { MemberCard } from "@/components/member-card";
 import { MembershipToggle } from "@/components/membership-toggle";
 import { RemoveMemberButton } from "@/components/remove-member-button";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { ArrowLeft, Users } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -79,7 +80,7 @@ export default async function MembersPage({ params }: PageProps) {
   });
 
   return (
-    <div>
+    <div className="space-y-8">
       <Breadcrumb
         items={[
           { label: "Clubs", href: "/clubs" },
@@ -89,19 +90,34 @@ export default async function MembersPage({ params }: PageProps) {
       />
 
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            Members ({memberships.length})
-          </h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+            <Users className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 
+              className="text-2xl font-bold tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Members
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {memberships.length} {memberships.length === 1 ? "person" : "people"} in this club
+            </p>
+          </div>
         </div>
-        <Button variant="outline" asChild>
-          <Link href={`/clubs/${clubId}`}>Back to Club</Link>
+        
+        <Button variant="outline" asChild className="gap-2 shrink-0">
+          <Link href={`/clubs/${clubId}`}>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Club
+          </Link>
         </Button>
       </div>
 
       {/* Members List */}
-      <div className="space-y-3">
+      <div className="stagger-in space-y-3">
         {memberships.map((membership) => (
           <MemberCard
             key={membership.id}

@@ -9,6 +9,7 @@ import { DeleteClubButton } from "@/components/delete-club-button";
 import { MemberCard } from "@/components/member-card";
 import { MembershipToggle } from "@/components/membership-toggle";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { ArrowLeft, Settings, AlertTriangle, Wrench } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -86,22 +87,39 @@ export default async function SettingsPage({ params }: PageProps) {
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Club Settings</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+            <Settings className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <div>
+            <h1 
+              className="text-2xl font-bold tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Club Settings
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Manage your club details and preferences
+            </p>
+          </div>
         </div>
-        <Button variant="outline" asChild>
-          <Link href={`/clubs/${clubId}`}>Back to Club</Link>
+        
+        <Button variant="outline" asChild className="gap-2 shrink-0">
+          <Link href={`/clubs/${clubId}`}>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Club
+          </Link>
         </Button>
       </div>
 
       {/* Edit Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Club Details</CardTitle>
-          <CardDescription>Update your club information.</CardDescription>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/30">
+          <CardTitle className="text-lg">Club Details</CardTitle>
+          <CardDescription>Update your club name, description, and image.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <ClubForm
             mode="edit"
             clubId={clubId}
@@ -116,11 +134,12 @@ export default async function SettingsPage({ params }: PageProps) {
 
       {/* Dev Tools */}
       {isDev && memberships.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="overflow-hidden border-amber/30 bg-amber/5">
+          <CardHeader className="border-b border-amber/20 bg-amber/10">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Wrench className="h-5 w-5 text-amber-600" />
               Dev Tools
-              <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs font-normal text-yellow-800">
+              <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-normal text-amber-800">
                 Development Only
               </span>
             </CardTitle>
@@ -128,7 +147,7 @@ export default async function SettingsPage({ params }: PageProps) {
               Toggle member status for testing access rules.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 p-6">
             {memberships.map((membership) => (
               <MemberCard
                 key={membership.id}
@@ -153,14 +172,17 @@ export default async function SettingsPage({ params }: PageProps) {
       )}
 
       {/* Danger Zone */}
-      <Card className="border-red-200">
-        <CardHeader>
-          <CardTitle className="text-red-600">Danger Zone</CardTitle>
+      <Card className="overflow-hidden border-destructive/30">
+        <CardHeader className="border-b border-destructive/20 bg-destructive/5">
+          <CardTitle className="flex items-center gap-2 text-lg text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Danger Zone
+          </CardTitle>
           <CardDescription>
-            Permanently delete this club and all its data.
+            Permanently delete this club and all its data. This action cannot be undone.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <DeleteClubButton clubId={clubId} clubName={club.name} />
         </CardContent>
       </Card>

@@ -8,6 +8,7 @@ import { ClubAvatar } from "@/components/club-avatar";
 import { MembershipStatusBadge } from "@/components/membership-status-badge";
 import { LeaveButton } from "@/components/leave-button";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { Users, Settings, Crown, Sparkles, ArrowRight } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -27,6 +28,9 @@ export default async function ClubDetailPage({ params }: PageProps) {
           name: true,
           avatarUrl: true,
         },
+      },
+      _count: {
+        select: { memberships: true },
       },
     },
   });
@@ -58,7 +62,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
   const isActiveMember = membership?.status === "active";
 
   return (
-    <div>
+    <div className="space-y-8">
       <Breadcrumb
         items={[
           { label: "Clubs", href: "/clubs" },
@@ -66,67 +70,146 @@ export default async function ClubDetailPage({ params }: PageProps) {
         ]}
       />
 
-      {/* Club Header */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-        <ClubAvatar
-          name={club.name}
-          imageUrl={club.imageUrl}
-          size="lg"
-        />
-        <div className="flex-1">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">{club.name}</h1>
-              <p className="mt-1 text-muted-foreground">
-                Organized by {club.organizer.name}
-              </p>
+      {/* Club Hero */}
+      <section className="relative overflow-hidden rounded-2xl bg-card shadow-sm">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-amber/5" />
+        <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 h-64 w-64 rounded-full bg-amber/10 blur-3xl" />
+        
+        <div className="relative p-6 sm:p-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+            {/* Avatar */}
+            <div className="shrink-0">
+              <ClubAvatar
+                name={club.name}
+                imageUrl={club.imageUrl}
+                size="xl"
+                className="ring-4 ring-background shadow-lg"
+              />
             </div>
-            <div className="flex items-center gap-2">
-              {isOrganizer && (
-                <Badge variant="outline">Organizer</Badge>
+            
+            {/* Content */}
+            <div className="flex-1 space-y-4">
+              {/* Title and badges */}
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  {isOrganizer && (
+                    <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-primary">
+                      <Crown className="h-3 w-3" />
+                      Organizer
+                    </Badge>
+                  )}
+                  {membership && (
+                    <MembershipStatusBadge status={membership.status} />
+                  )}
+                </div>
+                
+                <h1 
+                  className="text-3xl font-bold tracking-tight sm:text-4xl"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {club.name}
+                </h1>
+                
+                <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    {club._count.memberships} {club._count.memberships === 1 ? "member" : "members"}
+                  </span>
+                  <span>
+                    Organized by <span className="font-medium text-foreground">{club.organizer.name}</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              {club.description && (
+                <p className="max-w-2xl text-muted-foreground leading-relaxed">
+                  {club.description}
+                </p>
               )}
-              {membership && (
-                <MembershipStatusBadge status={membership.status} />
-              )}
+
+              {/* Actions */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                {!session ? (
+                  <Button 
+                    asChild 
+                    className="gap-2 shadow-honey transition-all hover:shadow-honey-lg"
+                  >
+                    <a href="/auth/login">
+                      <Sparkles className="h-4 w-4" />
+                      Login to Join
+                    </a>
+                  </Button>
+                ) : !isMember ? (
+                  <Button 
+                    asChild 
+                    className="group gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
+                  >
+                    <Link href={`/clubs/${id}/join`}>
+                      <Sparkles className="h-4 w-4" />
+                      Join Club
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </Button>
+                ) : isActiveMember ? (
+                  <Button 
+                    asChild 
+                    className="gap-2"
+                  >
+                    <Link href={`/clubs/${id}/members`}>
+                      <Users className="h-4 w-4" />
+                      View Members
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="secondary" disabled className="gap-2">
+                    Membership Inactive
+                  </Button>
+                )}
+
+                {isMember && !isOrganizer && (
+                  <LeaveButton clubId={id} />
+                )}
+
+                {isOrganizer && (
+                  <Button variant="outline" asChild className="gap-2">
+                    <Link href={`/clubs/${id}/settings`}>
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-
-          {club.description && (
-            <p className="mt-4 text-foreground">{club.description}</p>
-          )}
-
-          {/* Actions */}
-          <div className="mt-6 flex flex-wrap gap-3">
-            {!session ? (
-              <Button asChild>
-                <a href="/auth/login">Login to Join</a>
-              </Button>
-            ) : !isMember ? (
-              <Button asChild>
-                <Link href={`/clubs/${id}/join`}>Join Club</Link>
-              </Button>
-            ) : isActiveMember ? (
-              <Button asChild>
-                <Link href={`/clubs/${id}/members`}>View Members</Link>
-              </Button>
-            ) : (
-              <Button variant="secondary" disabled>
-                Membership Inactive
-              </Button>
-            )}
-
-            {isMember && !isOrganizer && (
-              <LeaveButton clubId={id} />
-            )}
-
-            {isOrganizer && (
-              <Button variant="outline" asChild>
-                <Link href={`/clubs/${id}/settings`}>Settings</Link>
-              </Button>
-            )}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Quick Stats (if member) */}
+      {isActiveMember && (
+        <section className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-border/60 bg-card p-5">
+            <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
+              {club._count.memberships}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Members</div>
+          </div>
+          <div className="rounded-xl border border-border/60 bg-card p-5">
+            <div className="text-2xl font-bold text-primary" style={{ fontFamily: "var(--font-display)" }}>
+              Active
+            </div>
+            <div className="text-sm text-muted-foreground">Your Status</div>
+          </div>
+          <div className="rounded-xl border border-border/60 bg-card p-5">
+            <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
+              {new Date(membership!.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+            </div>
+            <div className="text-sm text-muted-foreground">Member Since</div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

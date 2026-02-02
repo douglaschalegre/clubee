@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2, Sparkles } from "lucide-react";
 
 interface JoinButtonProps {
   clubId: string;
@@ -56,10 +57,27 @@ export function JoinButton({ clubId }: JoinButtonProps) {
   return (
     <div>
       {error && (
-        <p className="mb-4 text-sm text-red-600">{error}</p>
+        <div className="mb-4 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+          {error}
+        </div>
       )}
-      <Button onClick={handleJoin} disabled={isJoining} size="lg" className="w-full">
-        {isJoining ? "Redirecting to payment..." : "Join Club - Subscribe"}
+      <Button 
+        onClick={handleJoin} 
+        disabled={isJoining} 
+        size="lg" 
+        className="w-full gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.01] disabled:opacity-70"
+      >
+        {isJoining ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Redirecting to payment...
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-4 w-4" />
+            Join Club - Subscribe
+          </>
+        )}
       </Button>
     </div>
   );

@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { LogOut, Loader2 } from "lucide-react";
 
 interface LeaveButtonProps {
   clubId: string;
@@ -55,29 +56,48 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
 
   return (
     <div>
-      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+      {error && (
+        <div className="mb-2 rounded-lg bg-destructive/10 border border-destructive/20 p-2 text-sm text-destructive">
+          {error}
+        </div>
+      )}
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" disabled={isLeaving}>
+          <Button variant="outline" disabled={isLeaving} className="gap-2">
+            <LogOut className="h-4 w-4" />
             {isLeaving ? "Leaving..." : "Leave Club"}
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave this club?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle 
+              className="text-xl"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Leave this club?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
               Your membership will be canceled and you will lose access to club
               content. You can rejoin later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLeaving}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={isLeaving}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleLeave}
               disabled={isLeaving}
-              variant="destructive"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {isLeaving ? "Leaving..." : "Leave Club"}
+              {isLeaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Leaving...
+                </>
+              ) : (
+                "Leave Club"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

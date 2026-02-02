@@ -3,10 +3,10 @@ import { redirect, notFound } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClubAvatar } from "@/components/club-avatar";
 import { JoinButton } from "@/components/join-button";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { Shield, CreditCard, ArrowLeft, CheckCircle2 } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -67,39 +67,99 @@ export default async function JoinClubPage({ params }: PageProps) {
           { label: "Join" },
         ]}
       />
-      <Card>
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
-            <ClubAvatar name={club.name} imageUrl={club.imageUrl} size="lg" />
-          </div>
-          <CardTitle className="text-2xl">{club.name}</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Organized by {club.organizer.name}
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {club.description && (
-            <p className="text-center text-muted-foreground">
-              {club.description}
+      
+      {/* Join Card */}
+      <div className="relative overflow-hidden rounded-2xl bg-card shadow-lg">
+        {/* Decorative background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+        
+        <div className="relative p-8">
+          {/* Club Info */}
+          <div className="text-center">
+            <div className="mx-auto mb-4 inline-block">
+              <ClubAvatar 
+                name={club.name} 
+                imageUrl={club.imageUrl} 
+                size="xl" 
+                className="ring-4 ring-background shadow-lg"
+              />
+            </div>
+            
+            <h1 
+              className="text-2xl font-bold tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Join {club.name}
+            </h1>
+            
+            <p className="mt-1 text-sm text-muted-foreground">
+              Organized by {club.organizer.name}
             </p>
-          )}
 
-          <div className="rounded-lg bg-muted p-4 text-center">
-            <p className="text-lg font-semibold">Membership Subscription</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Joining this club requires a paid subscription. You&apos;ll be
-              redirected to our secure payment page.
-            </p>
+            {club.description && (
+              <p className="mx-auto mt-4 max-w-sm text-muted-foreground">
+                {club.description}
+              </p>
+            )}
           </div>
 
-          <div className="flex flex-col gap-3">
+          {/* Divider */}
+          <div className="my-6 h-px bg-border" />
+
+          {/* Subscription Info */}
+          <div className="space-y-4">
+            <div className="rounded-xl bg-muted/50 p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold">Membership Subscription</div>
+                  <div className="text-sm text-muted-foreground">
+                    Secure payment via Stripe
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Benefits */}
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>Full access to club content and members</span>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>Cancel anytime, no commitments</span>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="text-muted-foreground">Your payment info is securely processed by Stripe</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="my-6 h-px bg-border" />
+
+          {/* Actions */}
+          <div className="space-y-3">
             <JoinButton clubId={id} />
-            <Button variant="outline" asChild>
-              <Link href={`/clubs/${id}`}>Cancel</Link>
+            
+            <Button 
+              variant="ghost" 
+              asChild 
+              className="w-full gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Link href={`/clubs/${id}`}>
+                <ArrowLeft className="h-4 w-4" />
+                Back to Club
+              </Link>
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
