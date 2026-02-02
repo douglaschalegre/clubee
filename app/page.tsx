@@ -118,7 +118,7 @@ export default function LandingPage() {
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className="hex-card flex h-24 w-24 items-center justify-center rounded-xl bg-white/80 shadow-sm"
+                  className="flex h-24 w-24 items-center justify-center rounded-xl bg-white/80 shadow-sm"
                 >
                   <div className="clip-hexagon h-16 w-16 bg-primary/15" />
                 </div>
@@ -217,7 +217,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-amber/10 p-8 sm:p-12">
         <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
         <div className="relative grid gap-8 lg:grid-cols-[0.45fr_0.55fr]">
-          <div className="hex-card flex items-center justify-center rounded-3xl bg-white/80 p-6 shadow-honey">
+          <div className="flex items-center justify-center rounded-3xl bg-white/80 p-6 shadow-honey">
             <div className="clip-hexagon flex h-24 w-24 items-center justify-center bg-primary/20 text-2xl">
               🐝
             </div>
