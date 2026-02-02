@@ -13,7 +13,7 @@ export default async function MyClubsPage() {
 
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true },
+    select: { id: true, stripeConnectStatus: true },
   });
 
   if (!dbUser) {
@@ -29,6 +29,8 @@ export default async function MyClubsPage() {
         name: true,
         description: true,
         imageUrl: true,
+        membershipPriceCents: true,
+        stripePriceId: true,
         _count: { select: { memberships: true } },
       },
     }),
@@ -46,6 +48,8 @@ export default async function MyClubsPage() {
             name: true,
             description: true,
             imageUrl: true,
+            membershipPriceCents: true,
+            stripePriceId: true,
             _count: { select: { memberships: true } },
           },
         },
@@ -58,6 +62,7 @@ export default async function MyClubsPage() {
       <Breadcrumb items={[{ label: "Meus clubes" }]} />
       <MyClubsView
         organizingClubs={organizingClubs}
+        connectStatus={dbUser.stripeConnectStatus}
         memberMemberships={memberMemberships.map((membership) => ({
           ...membership,
           currentPeriodEnd: membership.currentPeriodEnd

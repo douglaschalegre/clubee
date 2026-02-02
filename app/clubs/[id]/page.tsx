@@ -10,7 +10,7 @@ import { MembershipStatusBadge } from "@/components/membership-status-badge";
 import { LeaveButton } from "@/components/leave-button";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ClubEventsSection } from "@/components/club-events-section";
-import { Users, Settings, Crown, Sparkles, ArrowRight } from "lucide-react";
+import { Users, Settings, Crown, Sparkles, ArrowRight, AlertTriangle } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -29,6 +29,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
           id: true,
           name: true,
           avatarUrl: true,
+          stripeConnectStatus: true,
         },
       },
       _count: {
@@ -63,6 +64,9 @@ export default async function ClubDetailPage({ params }: PageProps) {
   const isMember = !!membership;
   const isActiveMember = membership?.status === "active";
   const canViewEventDetails = isOrganizer || isActiveMember;
+  const canAcceptPayments =
+    club.organizer.stripeConnectStatus === "active" &&
+    !!club.stripePriceId;
 
   const events = await prisma.event.findMany({
     where: { clubId: id },
@@ -166,16 +170,24 @@ export default async function ClubDetailPage({ params }: PageProps) {
                     </a>
                   </Button>
                 ) : !isMember ? (
-                  <Button
-                    asChild
-                    className="group gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
-                  >
-                    <Link href={`/clubs/${id}/join`}>
-                      <Sparkles className="h-4 w-4" />
-                      Participar do clube
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </Link>
-                  </Button>
+                  canAcceptPayments ? (
+                    <Button
+                      asChild
+                      className="group gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
+                    >
+                      <Link href={`/clubs/${id}/join`}>
+                        <Sparkles className="h-4 w-4" />
+                        {club.membershipPriceCents
+                          ? `Participar - ${(club.membershipPriceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês`
+                          : "Participar do clube"}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button disabled variant="secondary" className="gap-2">
+                      Pagamentos ainda não configurados
+                    </Button>
+                  )
                 ) : isActiveMember ? (
                   <Button asChild className="gap-2">
                     <Link href={`/clubs/${id}/members`}>
@@ -204,6 +216,24 @@ export default async function ClubDetailPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {/* Organizer banner: payment setup needed */}
+      {isOrganizer && !canAcceptPayments && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+          <div className="flex-1 text-sm">
+            <span className="font-medium text-amber-800 dark:text-amber-200">
+              Pagamentos não configurados.
+            </span>{" "}
+            <span className="text-amber-700 dark:text-amber-300">
+              Configure o Stripe e defina um preço para que membros possam participar.
+            </span>
+          </div>
+          <Button asChild size="sm" variant="outline" className="shrink-0">
+            <Link href={`/clubs/${id}/settings`}>Configurar</Link>
+          </Button>
+        </div>
+      )}
 
       <ClubEventsSection
         clubId={id}

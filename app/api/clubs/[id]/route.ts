@@ -7,6 +7,7 @@ import {
   jsonSuccess,
 } from "@/lib/api-utils";
 import { updateClubSchema } from "@/lib/validations/club";
+import { stripe } from "@/lib/stripe";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -120,6 +121,28 @@ export async function DELETE(_request: Request, context: RouteContext) {
   }
 
   try {
+    // Cancel all active subscriptions for this club
+    const membershipsWithSubs = await prisma.membership.findMany({
+      where: {
+        clubId,
+        stripeSubscriptionId: { not: null },
+      },
+      select: { stripeSubscriptionId: true },
+    });
+
+    for (const m of membershipsWithSubs) {
+      if (m.stripeSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(m.stripeSubscriptionId);
+        } catch (error) {
+          console.error(
+            `Falha ao cancelar assinatura ${m.stripeSubscriptionId}:`,
+            error
+          );
+        }
+      }
+    }
+
     await prisma.club.delete({
       where: { id: clubId },
     });

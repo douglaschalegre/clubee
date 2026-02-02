@@ -59,6 +59,10 @@ export async function POST(request: Request) {
         await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
         break;
 
+      case "account.updated":
+        await handleAccountUpdated(event.data.object as Stripe.Account);
+        break;
+
       default:
         // Unhandled event type
         console.log(`Unhandled event type: ${event.type}`);
@@ -217,4 +221,42 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   // For now, just log - you might want to send email notifications
   // or mark as inactive after multiple failures
   console.log(`Payment failed for subscription ${subscriptionId}`);
+}
+
+/**
+ * Handle account.updated - sync Connect account status.
+ */
+async function handleAccountUpdated(account: Stripe.Account) {
+  if (!account.id) return;
+
+  const user = await prisma.user.findUnique({
+    where: { stripeConnectAccountId: account.id },
+    select: { id: true },
+  });
+
+  if (!user) {
+    console.log(`No user found for Connect account ${account.id}`);
+    return;
+  }
+
+  let status: "active" | "restricted" | "disabled" | "onboarding_incomplete" =
+    "onboarding_incomplete";
+  if (account.charges_enabled && account.details_submitted) {
+    status = "active";
+  } else if (account.requirements?.disabled_reason) {
+    status = account.requirements.disabled_reason.includes("rejected")
+      ? "disabled"
+      : "restricted";
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      stripeConnectStatus: status,
+      stripeConnectChargesEnabled: account.charges_enabled ?? false,
+      stripeConnectPayoutsEnabled: account.payouts_enabled ?? false,
+    },
+  });
+
+  console.log(`Connect account ${account.id} updated: ${status}`);
 }

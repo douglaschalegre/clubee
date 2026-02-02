@@ -31,14 +31,34 @@ export async function POST(request: Request) {
     return jsonError("Corpo da requisição inválido", 400);
   }
 
-  // Check if club exists
+  // Check if club exists and fetch pricing + organizer connect info
   const club = await prisma.club.findUnique({
     where: { id: clubId },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      stripePriceId: true,
+      stripeProductId: true,
+      organizer: {
+        select: {
+          stripeConnectAccountId: true,
+          stripeConnectStatus: true,
+        },
+      },
+    },
   });
 
   if (!club) {
     return jsonError("Clube não encontrado", 404);
+  }
+
+  // Validate that organizer has Connect set up and pricing is configured
+  if (club.organizer.stripeConnectStatus !== "active") {
+    return jsonError("O organizador ainda não configurou pagamentos", 400);
+  }
+
+  if (!club.stripePriceId || !club.organizer.stripeConnectAccountId) {
+    return jsonError("Preço de membresia não configurado", 400);
   }
 
   // Check if already a member
@@ -70,26 +90,24 @@ export async function POST(request: Request) {
     });
   }
 
-  // Get price ID from env (in production, clubs would have their own prices)
-  const priceId = process.env.STRIPE_PRICE_ID;
-  if (!priceId) {
-    return jsonError("Stripe não configurado", 500);
-  }
-
-  // Build success and cancel URLs
   const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
   const successUrl = `${baseUrl}/api/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${baseUrl}/clubs/${clubId}`;
 
+  const platformFeePercent = parseFloat(
+    process.env.STRIPE_PLATFORM_FEE_PERCENT || "10"
+  );
+
   try {
-    // Create checkout session
     const session = await createCheckoutSession({
       customerId: stripeCustomerId,
-      priceId,
+      priceId: club.stripePriceId,
       clubId,
       userId: user.id,
       successUrl,
       cancelUrl,
+      stripeConnectAccountId: club.organizer.stripeConnectAccountId,
+      applicationFeePercent: platformFeePercent,
     });
 
     return Response.json({ url: session.url });

@@ -9,8 +9,10 @@ import { DeleteClubButton } from "@/components/delete-club-button";
 import { MemberCard } from "@/components/member-card";
 import { MembershipToggle } from "@/components/membership-toggle";
 import { TransferOwnership } from "@/components/transfer-ownership";
+import { StripeConnectSetup } from "@/components/stripe-connect-setup";
+import { ClubPricingForm } from "@/components/club-pricing-form";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { ArrowLeft, Settings, AlertTriangle, Wrench, Users } from "lucide-react";
+import { ArrowLeft, Settings, AlertTriangle, Wrench, Users, CreditCard, DollarSign } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -28,7 +30,7 @@ export default async function SettingsPage({ params }: PageProps) {
   // Get current user
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true },
+    select: { id: true, stripeConnectStatus: true },
   });
 
   if (!dbUser) {
@@ -44,6 +46,7 @@ export default async function SettingsPage({ params }: PageProps) {
       description: true,
       imageUrl: true,
       organizerId: true,
+      membershipPriceCents: true,
     },
   });
 
@@ -138,6 +141,43 @@ export default async function SettingsPage({ params }: PageProps) {
           />
         </CardContent>
       </Card>
+
+      {/* Stripe Connect */}
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/30">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CreditCard className="h-5 w-5" />
+            Pagamentos via Stripe
+          </CardTitle>
+          <CardDescription>
+            Configure sua conta Stripe para receber pagamentos dos membros.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <StripeConnectSetup status={dbUser.stripeConnectStatus} />
+        </CardContent>
+      </Card>
+
+      {/* Pricing */}
+      {dbUser.stripeConnectStatus === "active" && (
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b bg-muted/30">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <DollarSign className="h-5 w-5" />
+              Preço da membresia
+            </CardTitle>
+            <CardDescription>
+              Defina o valor mensal da assinatura para participar do clube.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ClubPricingForm
+              clubId={clubId}
+              currentPriceCents={club.membershipPriceCents}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Transfer Ownership */}
       <Card className="overflow-hidden">

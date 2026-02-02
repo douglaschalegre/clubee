@@ -41,6 +41,7 @@ export async function getOrCreateCustomer(
 
 /**
  * Create a checkout session for club membership subscription.
+ * Supports Stripe Connect with transfer_data for routing payments to organizers.
  */
 export async function createCheckoutSession({
   customerId,
@@ -49,6 +50,8 @@ export async function createCheckoutSession({
   userId,
   successUrl,
   cancelUrl,
+  stripeConnectAccountId,
+  applicationFeePercent,
 }: {
   customerId: string;
   priceId: string;
@@ -56,6 +59,8 @@ export async function createCheckoutSession({
   userId: string;
   successUrl: string;
   cancelUrl: string;
+  stripeConnectAccountId?: string;
+  applicationFeePercent?: number;
 }): Promise<Stripe.Checkout.Session> {
   return stripe.checkout.sessions.create({
     customer: customerId,
@@ -77,6 +82,12 @@ export async function createCheckoutSession({
         clubId,
         userId,
       },
+      ...(stripeConnectAccountId && {
+        transfer_data: {
+          destination: stripeConnectAccountId,
+        },
+        application_fee_percent: applicationFeePercent,
+      }),
     },
   });
 }
@@ -90,4 +101,102 @@ export function constructWebhookEvent(
   webhookSecret: string
 ): Stripe.Event {
   return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+}
+
+/**
+ * Create a Stripe Connect Express account.
+ */
+export async function createConnectAccount(
+  email: string,
+  businessName?: string
+): Promise<Stripe.Account> {
+  return stripe.accounts.create({
+    type: "express",
+    email,
+    business_profile: {
+      name: businessName,
+    },
+    capabilities: {
+      card_payments: { requested: true },
+      transfers: { requested: true },
+    },
+  });
+}
+
+/**
+ * Create an account link for Stripe Connect onboarding.
+ */
+export async function createAccountLink(
+  accountId: string,
+  refreshUrl: string,
+  returnUrl: string
+): Promise<Stripe.AccountLink> {
+  return stripe.accountLinks.create({
+    account: accountId,
+    refresh_url: refreshUrl,
+    return_url: returnUrl,
+    type: "account_onboarding",
+  });
+}
+
+/**
+ * Create a login link for the Express dashboard.
+ */
+export async function createConnectLoginLink(
+  accountId: string
+): Promise<Stripe.LoginLink> {
+  return stripe.accounts.createLoginLink(accountId);
+}
+
+/**
+ * Retrieve a Stripe Connect account.
+ */
+export async function getConnectAccount(
+  accountId: string
+): Promise<Stripe.Account> {
+  return stripe.accounts.retrieve(accountId);
+}
+
+/**
+ * Create a Stripe Product and Price for a club on the platform account.
+ */
+export async function createClubProduct(
+  clubName: string,
+  priceCents: number,
+  currency = "brl",
+  interval: "month" | "year" = "month"
+): Promise<{ product: Stripe.Product; price: Stripe.Price }> {
+  const product = await stripe.products.create({
+    name: `Membresia - ${clubName}`,
+    metadata: { source: "clubee" },
+  });
+
+  const price = await stripe.prices.create({
+    product: product.id,
+    unit_amount: priceCents,
+    currency,
+    recurring: { interval },
+  });
+
+  return { product, price };
+}
+
+/**
+ * Archive an old price and create a new one for the same product.
+ */
+export async function updateClubPrice(
+  productId: string,
+  oldPriceId: string,
+  priceCents: number,
+  currency = "brl",
+  interval: "month" | "year" = "month"
+): Promise<Stripe.Price> {
+  await stripe.prices.update(oldPriceId, { active: false });
+
+  return stripe.prices.create({
+    product: productId,
+    unit_amount: priceCents,
+    currency,
+    recurring: { interval },
+  });
 }

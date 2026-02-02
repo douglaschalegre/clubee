@@ -12,13 +12,15 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { ArrowRight, CreditCard, Crown, Users } from "lucide-react";
+import { ArrowRight, CreditCard, Crown, Users, AlertCircle, CheckCircle2 } from "lucide-react";
 
 type ClubSummary = {
   id: string;
   name: string;
   description: string | null;
   imageUrl: string | null;
+  membershipPriceCents: number | null;
+  stripePriceId: string | null;
   _count: { memberships: number };
 };
 
@@ -32,9 +34,18 @@ type MembershipSummary = {
 
 type ViewMode = "organizing" | "member";
 
+type ConnectStatus =
+  | "not_started"
+  | "onboarding_started"
+  | "onboarding_incomplete"
+  | "active"
+  | "restricted"
+  | "disabled";
+
 interface MyClubsViewProps {
   organizingClubs: ClubSummary[];
   memberMemberships: MembershipSummary[];
+  connectStatus: ConnectStatus;
   initialView?: ViewMode;
 }
 
@@ -49,6 +60,7 @@ function formatDate(value: string) {
 export function MyClubsView({
   organizingClubs,
   memberMemberships,
+  connectStatus,
   initialView = "organizing",
 }: MyClubsViewProps) {
   const [view, setView] = useState<ViewMode>(initialView);
@@ -190,10 +202,30 @@ export function MyClubsView({
                         <Users className="h-4 w-4" />
                         {club._count.memberships} {club._count.memberships === 1 ? "membro" : "membros"}
                       </span>
+                      {connectStatus === "active" && club.stripePriceId ? (
+                        <span className="flex items-center gap-1.5 text-emerald-600">
+                          <CheckCircle2 className="h-4 w-4" />
+                          {club.membershipPriceCents
+                            ? `${(club.membershipPriceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês`
+                            : "Pagamentos ativos"}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-amber-600">
+                          <AlertCircle className="h-4 w-4" />
+                          Pagamentos pendentes
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
+                    {connectStatus !== "active" || !club.stripePriceId ? (
+                      <Button asChild variant="outline" size="sm" className="gap-2">
+                        <Link href={`/clubs/${club.id}/settings`}>
+                          Configurar pagamentos
+                        </Link>
+                      </Button>
+                    ) : null}
                     <Button asChild className="gap-2">
                       <Link href={`/clubs/${club.id}`}>
                         Ver clube

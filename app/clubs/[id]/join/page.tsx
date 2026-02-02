@@ -21,7 +21,7 @@ export default async function JoinClubPage({ params }: PageProps) {
     redirect("/auth/login");
   }
 
-  // Fetch club
+  // Fetch club with pricing and organizer connect info
   const club = await prisma.club.findUnique({
     where: { id },
     select: {
@@ -29,8 +29,13 @@ export default async function JoinClubPage({ params }: PageProps) {
       name: true,
       description: true,
       imageUrl: true,
+      membershipPriceCents: true,
+      stripePriceId: true,
       organizer: {
-        select: { name: true },
+        select: {
+          name: true,
+          stripeConnectStatus: true,
+        },
       },
     },
   });
@@ -114,12 +119,20 @@ export default async function JoinClubPage({ params }: PageProps) {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   <CreditCard className="h-5 w-5 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="font-semibold">Assinatura de membresia</div>
                   <div className="text-sm text-muted-foreground">
                     Pagamento seguro via Stripe
                   </div>
                 </div>
+                {club.membershipPriceCents && (
+                  <div className="text-right">
+                    <div className="text-lg font-bold">
+                      {(club.membershipPriceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </div>
+                    <div className="text-xs text-muted-foreground">por mês</div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -145,7 +158,14 @@ export default async function JoinClubPage({ params }: PageProps) {
 
           {/* Actions */}
           <div className="space-y-3">
-            <JoinButton clubId={id} />
+            <JoinButton
+              clubId={id}
+              canAcceptPayments={
+                club.organizer.stripeConnectStatus === "active" &&
+                !!club.stripePriceId
+              }
+              priceCents={club.membershipPriceCents}
+            />
             
             <Button 
               variant="ghost" 

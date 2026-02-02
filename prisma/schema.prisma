@@ -27,6 +27,15 @@ enum EventRsvpStatus {
   not_going
 }
 
+enum StripeConnectStatus {
+  not_started
+  onboarding_started
+  onboarding_incomplete
+  active
+  restricted
+  disabled
+}
+
 model User {
   id               String   @id @default(cuid())
   auth0Id          String   @unique @map("auth0_id")
@@ -34,9 +43,13 @@ model User {
   email            String   @unique
   phone            String?
   avatarUrl        String?  @map("avatar_url")
-  stripeCustomerId String?  @unique @map("stripe_customer_id")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  stripeCustomerId            String?              @unique @map("stripe_customer_id")
+  stripeConnectAccountId      String?              @unique @map("stripe_connect_account_id")
+  stripeConnectStatus         StripeConnectStatus  @default(not_started) @map("stripe_connect_status")
+  stripeConnectChargesEnabled Boolean              @default(false) @map("stripe_connect_charges_enabled")
+  stripeConnectPayoutsEnabled Boolean              @default(false) @map("stripe_connect_payouts_enabled")
+  createdAt                   DateTime             @default(now()) @map("created_at")
+  updatedAt                   DateTime             @updatedAt @map("updated_at")
 
   memberships    Membership[]
   organizedClubs Club[]       @relation("ClubOrganizer")
@@ -49,9 +62,12 @@ model Club {
   id          String   @id @default(cuid())
   name        String
   description String?
-  imageUrl    String?  @map("image_url")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  imageUrl           String?  @map("image_url")
+  stripeProductId    String?  @map("stripe_product_id")
+  stripePriceId      String?  @map("stripe_price_id")
+  membershipPriceCents Int?   @map("membership_price_cents")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   organizerId String @map("organizer_id")
   organizer   User   @relation("ClubOrganizer", fields: [organizerId], references: [id])

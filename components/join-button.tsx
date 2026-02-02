@@ -6,9 +6,22 @@ import { Loader2, Sparkles } from "lucide-react";
 
 interface JoinButtonProps {
   clubId: string;
+  canAcceptPayments?: boolean;
+  priceCents?: number | null;
 }
 
-export function JoinButton({ clubId }: JoinButtonProps) {
+function formatCurrency(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+export function JoinButton({
+  clubId,
+  canAcceptPayments = true,
+  priceCents,
+}: JoinButtonProps) {
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +54,7 @@ export function JoinButton({ clubId }: JoinButtonProps) {
       if (!res.ok) {
         throw new Error(data.error || "Falha ao criar a sessão de checkout");
       }
-      
+
       if (data.url) {
         // Redirect to Stripe checkout
         window.location.href = data.url;
@@ -54,6 +67,23 @@ export function JoinButton({ clubId }: JoinButtonProps) {
     }
   }
 
+  if (!canAcceptPayments) {
+    return (
+      <Button
+        disabled
+        size="lg"
+        variant="secondary"
+        className="w-full gap-2"
+      >
+        Pagamentos ainda não configurados
+      </Button>
+    );
+  }
+
+  const label = priceCents
+    ? `Entrar no clube - ${formatCurrency(priceCents)}/mês`
+    : "Entrar no clube - Assinar";
+
   return (
     <div>
       {error && (
@@ -61,10 +91,10 @@ export function JoinButton({ clubId }: JoinButtonProps) {
           {error}
         </div>
       )}
-      <Button 
-        onClick={handleJoin} 
-        disabled={isJoining} 
-        size="lg" 
+      <Button
+        onClick={handleJoin}
+        disabled={isJoining}
+        size="lg"
         className="w-full gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.01] disabled:opacity-70"
       >
         {isJoining ? (
@@ -75,7 +105,7 @@ export function JoinButton({ clubId }: JoinButtonProps) {
         ) : (
           <>
             <Sparkles className="h-4 w-4" />
-            Entrar no clube - Assinar
+            {label}
           </>
         )}
       </Button>
