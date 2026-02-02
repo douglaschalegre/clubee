@@ -4,10 +4,12 @@ import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { ClubAvatar } from "@/components/club-avatar";
 import { MembershipStatusBadge } from "@/components/membership-status-badge";
 import { LeaveButton } from "@/components/leave-button";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { ClubEventsSection } from "@/components/club-events-section";
 import { Users, Settings, Crown, Sparkles, ArrowRight } from "lucide-react";
 
 interface PageProps {
@@ -60,6 +62,23 @@ export default async function ClubDetailPage({ params }: PageProps) {
   const isOrganizer = dbUser?.id === club.organizerId;
   const isMember = !!membership;
   const isActiveMember = membership?.status === "active";
+  const canViewEventDetails = isOrganizer || isActiveMember;
+
+  const events = await prisma.event.findMany({
+    where: { clubId: id },
+    orderBy: { startsAt: "asc" },
+    include: {
+      _count: { select: { rsvps: true } },
+      rsvps: dbUser?.id
+        ? {
+            where: { userId: dbUser.id },
+            select: { status: true },
+          }
+        : false,
+    },
+  });
+
+  const mapApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   return (
     <div className="space-y-8">
@@ -223,6 +242,27 @@ export default async function ClubDetailPage({ params }: PageProps) {
           </div>
         </section>
       )}
+
+      <ClubEventsSection
+        clubId={id}
+        events={events.map((event) => ({
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          startsAt: event.startsAt,
+          endsAt: event.endsAt ?? null,
+          timezone: event.timezone,
+          locationType: event.locationType,
+          locationValue: event.locationValue,
+          locationPlaceId: event.locationPlaceId,
+          rsvpCount: event._count.rsvps,
+          rsvpStatus: event.rsvps?.[0]?.status ?? null,
+        }))}
+        isOrganizer={isOrganizer}
+        canViewEventDetails={canViewEventDetails}
+        mapApiKey={mapApiKey}
+        isLoggedIn={!!session}
+      />
     </div>
   );
 }
