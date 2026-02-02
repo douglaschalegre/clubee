@@ -2,6 +2,13 @@ import Link from "next/link";
 import { auth0 } from "@/lib/auth0";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export async function Header() {
   const session = await auth0.getSession();
@@ -44,22 +51,31 @@ export async function Header() {
         <div className="flex items-center gap-3">
           {session ? (
             <>
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8 ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-shadow hover:ring-primary/40">
-                  <AvatarImage src={session.user.picture} alt={session.user.name} />
-                  <AvatarFallback className="bg-primary/10 text-sm font-medium">
-                    {session.user.name?.[0]?.toUpperCase() ?? "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-muted-foreground hover:text-foreground"
-                asChild
-              >
-                <a href="/auth/logout">Sair</a>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-full transition-shadow hover:ring-2 hover:ring-primary/40 hover:ring-offset-2 hover:ring-offset-background"
+                    aria-label="Abrir menu do usuário"
+                  >
+                    <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                      <AvatarImage src={session.user.picture} alt={session.user.name} />
+                      <AvatarFallback className="bg-primary/10 text-sm font-medium">
+                        {session.user.name?.[0]?.toUpperCase() ?? "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-clubs">Meus clubes</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="/auth/logout">Sair</a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
             <>
