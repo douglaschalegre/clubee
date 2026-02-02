@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
+import { stripe } from "@/lib/stripe";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 
 interface RouteContext {
@@ -66,6 +67,16 @@ export async function POST(request: Request, context: RouteContext) {
     return jsonError("O novo organizador deve ser membro do clube", 400);
   }
 
+  // If new owner has a subscription, cancel it
+  if (newOwnerMembership.stripeSubscriptionId) {
+    try {
+      await stripe.subscriptions.cancel(newOwnerMembership.stripeSubscriptionId);
+    } catch (error) {
+      console.error("Falha ao cancelar assinatura do novo organizador:", error);
+      // Continue anyway, don't block transfer
+    }
+  }
+
   try {
     // Transaction: update club owner, swap roles
     await prisma.$transaction([
@@ -74,15 +85,25 @@ export async function POST(request: Request, context: RouteContext) {
         where: { id: clubId },
         data: { organizerId: newOwnerUserId },
       }),
-      // Demote current organizer to member
+      // Demote current organizer to member AND set inactive (must resubscribe)
       prisma.membership.update({
         where: { userId_clubId: { userId: dbUser.id, clubId } },
-        data: { role: "member" },
+        data: { 
+          role: "member",
+          status: "inactive",
+          stripeSubscriptionId: null, // Ensure no stale sub ID
+          currentPeriodEnd: null 
+        },
       }),
-      // Promote new owner to organizer
+      // Promote new owner to organizer (active, no sub needed)
       prisma.membership.update({
         where: { userId_clubId: { userId: newOwnerUserId, clubId } },
-        data: { role: "organizer" },
+        data: { 
+          role: "organizer",
+          status: "active",
+          stripeSubscriptionId: null, // Clear sub ID as they are now owner
+          currentPeriodEnd: null 
+        },
       }),
     ]);
 
