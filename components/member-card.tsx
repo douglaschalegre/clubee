@@ -15,6 +15,8 @@ interface MemberCardProps {
   phone?: string;
   // Toggle component (passed in for organizer view)
   toggleComponent?: React.ReactNode;
+  // Remove component (passed in for organizer view)
+  removeComponent?: React.ReactNode;
 }
 
 export function MemberCard({
@@ -26,6 +28,7 @@ export function MemberCard({
   email,
   phone,
   toggleComponent,
+  removeComponent,
 }: MemberCardProps) {
   const joinDate = new Date(joinedAt).toLocaleDateString("en-US", {
     month: "short",
@@ -60,6 +63,10 @@ export function MemberCard({
 
       {toggleComponent && (
         <div className="shrink-0">{toggleComponent}</div>
+      )}
+
+      {removeComponent && (
+        <div className="shrink-0">{removeComponent}</div>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { MemberCard } from "@/components/member-card";
 import { MembershipToggle } from "@/components/membership-toggle";
+import { RemoveMemberButton } from "@/components/remove-member-button";
 import { Breadcrumb } from "@/components/breadcrumb";
 
 interface PageProps {
@@ -118,6 +119,15 @@ export default async function MembersPage({ params }: PageProps) {
                   clubId={clubId}
                   userId={membership.user.id}
                   currentStatus={membership.status}
+                />
+              ) : undefined
+            }
+            removeComponent={
+              isOrganizer && membership.role !== "organizer" ? (
+                <RemoveMemberButton
+                  clubId={clubId}
+                  userId={membership.user.id}
+                  memberName={membership.user.name}
                 />
               ) : undefined
             }
