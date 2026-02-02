@@ -59,21 +59,18 @@ export async function POST(_request: Request, context: RouteContext) {
   }
 
   try {
-    await prisma.membership.update({
+    await prisma.membership.delete({
       where: { id: membership.id },
-      data: {
-        status: "inactive",
-      },
     });
 
     if (cancellationError) {
       return jsonSuccess(
-        { status: "inactive", warning: "Subscription cancellation failed" },
+        { deleted: true, warning: "Subscription cancellation failed" },
         200
       );
     }
 
-    return jsonSuccess({ status: "inactive" }, 200);
+    return jsonSuccess({ deleted: true }, 200);
   } catch (error) {
     console.error("Failed to leave club:", error);
     return jsonError("Failed to leave club", 500);
