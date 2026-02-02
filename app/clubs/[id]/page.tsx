@@ -95,7 +95,10 @@ export default async function ClubDetailPage({ params }: PageProps) {
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   {isOrganizer && (
-                    <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-primary">
+                    <Badge
+                      variant="outline"
+                      className="badge-pop gap-1 border-primary/30 bg-primary/5 text-primary hover:bg-primary/20"
+                    >
                       <Crown className="h-3 w-3" />
                       Organizer
                     </Badge>
