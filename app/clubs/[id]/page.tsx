@@ -205,44 +205,6 @@ export default async function ClubDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* Quick Stats (if member) */}
-      {isActiveMember && (
-        <section className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-border/60 bg-card p-5">
-            <div
-              className="text-2xl font-bold"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {club._count.memberships}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Total de membros
-            </div>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-card p-5">
-            <div
-              className="text-2xl font-bold text-primary"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Ativo
-            </div>
-            <div className="text-sm text-muted-foreground">Seu status</div>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-card p-5">
-            <div
-              className="text-2xl font-bold"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {new Date(membership!.createdAt).toLocaleDateString("pt-BR", {
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
-            <div className="text-sm text-muted-foreground">Membro desde</div>
-          </div>
-        </section>
-      )}
-
       <ClubEventsSection
         clubId={id}
         events={events.map((event) => ({
