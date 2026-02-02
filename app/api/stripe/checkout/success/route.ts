@@ -79,7 +79,7 @@ export async function GET(request: Request) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") {
       throw error;
     }
-    console.error("Checkout success error:", error);
+    console.error("Erro no sucesso do checkout:", error);
     redirect("/clubs?error=checkout_failed");
   }
 

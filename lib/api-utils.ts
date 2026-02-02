@@ -30,7 +30,7 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
   const session = await auth0.getSession();
 
   if (!session?.user) {
-    return jsonError("Unauthorized", 401);
+    return jsonError("Não autorizado", 401);
   }
 
   try {
@@ -43,7 +43,7 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
 
     return { user };
   } catch {
-    return jsonError("Failed to provision user", 500);
+    return jsonError("Falha ao provisionar usuário", 500);
   }
 }
 
@@ -95,7 +95,7 @@ export async function requireActiveMembership(
   const membership = await getActiveMembership(userId, clubId);
 
   if (!membership) {
-    return jsonError("Active membership required", 403);
+    return jsonError("Assinatura ativa obrigatória", 403);
   }
 
   return membership;
@@ -126,7 +126,7 @@ export async function requireOrganizer(
   const isOrganizer = await isClubOrganizer(userId, clubId);
 
   if (!isOrganizer) {
-    return jsonError("Organizer access required", 403);
+    return jsonError("Acesso de organizador obrigatório", 403);
   }
 
   return true;

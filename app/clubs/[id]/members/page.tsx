@@ -83,9 +83,9 @@ export default async function MembersPage({ params }: PageProps) {
     <div className="space-y-8">
       <Breadcrumb
         items={[
-          { label: "Clubs", href: "/clubs" },
+          { label: "Clubes", href: "/clubs" },
           { label: club.name, href: `/clubs/${clubId}` },
-          { label: "Members" },
+          { label: "Membros" },
         ]}
       />
 
@@ -100,10 +100,10 @@ export default async function MembersPage({ params }: PageProps) {
               className="text-2xl font-bold tracking-tight"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Members
+              Membros
             </h1>
             <p className="text-sm text-muted-foreground">
-              {memberships.length} {memberships.length === 1 ? "person" : "people"} in this club
+              {memberships.length} {memberships.length === 1 ? "pessoa" : "pessoas"} neste clube
             </p>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default async function MembersPage({ params }: PageProps) {
         <Button variant="outline" asChild className="gap-2 shrink-0">
           <Link href={`/clubs/${clubId}`}>
             <ArrowLeft className="h-4 w-4" />
-            Back to Club
+            Voltar ao clube
           </Link>
         </Button>
       </div>

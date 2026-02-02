@@ -62,9 +62,9 @@ export default async function JoinClubPage({ params }: PageProps) {
     <div className="mx-auto max-w-lg">
       <Breadcrumb
         items={[
-          { label: "Clubs", href: "/clubs" },
+          { label: "Clubes", href: "/clubs" },
           { label: club.name, href: `/clubs/${id}` },
-          { label: "Join" },
+          { label: "Participar" },
         ]}
       />
       
@@ -90,11 +90,11 @@ export default async function JoinClubPage({ params }: PageProps) {
               className="text-2xl font-bold tracking-tight"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Join {club.name}
+              Participar de {club.name}
             </h1>
             
             <p className="mt-1 text-sm text-muted-foreground">
-              Organized by {club.organizer.name}
+              Organizado por {club.organizer.name}
             </p>
 
             {club.description && (
@@ -115,9 +115,9 @@ export default async function JoinClubPage({ params }: PageProps) {
                   <CreditCard className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <div className="font-semibold">Membership Subscription</div>
+                  <div className="font-semibold">Assinatura de membresia</div>
                   <div className="text-sm text-muted-foreground">
-                    Secure payment via Stripe
+                    Pagamento seguro via Stripe
                   </div>
                 </div>
               </div>
@@ -127,15 +127,15 @@ export default async function JoinClubPage({ params }: PageProps) {
             <div className="space-y-3">
               <div className="flex items-start gap-3 text-sm">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span>Full access to club content and members</span>
+                <span>Acesso completo ao conteúdo do clube e aos membros</span>
               </div>
               <div className="flex items-start gap-3 text-sm">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span>Cancel anytime, no commitments</span>
+                <span>Cancele quando quiser, sem compromisso</span>
               </div>
               <div className="flex items-start gap-3 text-sm">
                 <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-muted-foreground">Your payment info is securely processed by Stripe</span>
+                <span className="text-muted-foreground">Seus dados de pagamento são processados com segurança pelo Stripe</span>
               </div>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default async function JoinClubPage({ params }: PageProps) {
             >
               <Link href={`/clubs/${id}`}>
                 <ArrowLeft className="h-4 w-4" />
-                Back to Club
+                Voltar ao clube
               </Link>
             </Button>
           </div>

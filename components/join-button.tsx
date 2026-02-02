@@ -28,28 +28,28 @@ export function JoinButton({ clubId }: JoinButtonProps) {
       // Check if response has content
       const text = await res.text();
       if (!text) {
-        throw new Error(`Empty response from server (status: ${res.status})`);
+        throw new Error(`Resposta vazia do servidor (status: ${res.status})`);
       }
 
       let data;
       try {
         data = JSON.parse(text);
       } catch {
-        throw new Error(`Invalid JSON response: ${text.slice(0, 100)}`);
+        throw new Error(`Resposta JSON inválida: ${text.slice(0, 100)}`);
       }
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to create checkout session");
+        throw new Error(data.error || "Falha ao criar a sessão de checkout");
       }
       
       if (data.url) {
         // Redirect to Stripe checkout
         window.location.href = data.url;
       } else {
-        throw new Error("No checkout URL returned");
+        throw new Error("Nenhuma URL de checkout retornada");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Algo deu errado");
       setIsJoining(false);
     }
   }
@@ -70,12 +70,12 @@ export function JoinButton({ clubId }: JoinButtonProps) {
         {isJoining ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Redirecting to payment...
+            Redirecionando para o pagamento...
           </>
         ) : (
           <>
             <Sparkles className="h-4 w-4" />
-            Join Club - Subscribe
+            Entrar no clube - Assinar
           </>
         )}
       </Button>

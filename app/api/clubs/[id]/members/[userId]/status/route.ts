@@ -14,7 +14,7 @@ interface RouteContext {
 export async function PATCH(request: Request, context: RouteContext) {
   // Only allow in development
   if (process.env.NODE_ENV !== "development") {
-    return jsonError("Not available in production", 403);
+    return jsonError("Não disponível em produção", 403);
   }
 
   const { id: clubId, userId } = await context.params;
@@ -24,7 +24,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     body = await request.json();
   } catch {
-    return jsonError("Invalid JSON body", 400);
+    return jsonError("JSON inválido", 400);
   }
 
   const validation = updateMembershipStatusSchema.safeParse(body);
@@ -43,7 +43,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     });
 
     if (!existing) {
-      return jsonError("Membership not found", 404);
+      return jsonError("Assinatura não encontrada", 404);
     }
 
     // Update status
@@ -56,6 +56,6 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return jsonSuccess({ membership });
   } catch {
-    return jsonError("Failed to update membership status", 500);
+    return jsonError("Falha ao atualizar o status da assinatura", 500);
   }
 }

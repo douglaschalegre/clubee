@@ -39,12 +39,12 @@ export async function GET(_request: Request, context: RouteContext) {
     });
 
     if (!club) {
-      return jsonError("Club not found", 404);
+      return jsonError("Clube não encontrado", 404);
     }
 
     return jsonSuccess({ club });
   } catch {
-    return jsonError("Failed to fetch club", 500);
+    return jsonError("Falha ao buscar clube", 500);
   }
 }
 
@@ -73,7 +73,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     body = await request.json();
   } catch {
-    return jsonError("Invalid JSON body", 400);
+    return jsonError("JSON inválido", 400);
   }
 
   const validation = updateClubSchema.safeParse(body);
@@ -95,7 +95,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return jsonSuccess({ club });
   } catch {
-    return jsonError("Failed to update club", 500);
+    return jsonError("Falha ao atualizar clube", 500);
   }
 }
 
@@ -126,6 +126,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     return jsonSuccess({ deleted: true });
   } catch {
-    return jsonError("Failed to delete club", 500);
+    return jsonError("Falha ao excluir clube", 500);
   }
 }

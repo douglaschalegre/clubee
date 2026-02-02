@@ -28,7 +28,7 @@ export async function GET() {
 
     return jsonSuccess({ clubs });
   } catch {
-    return jsonError("Failed to fetch clubs", 500);
+    return jsonError("Falha ao buscar clubes", 500);
   }
 }
 
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return jsonError("Invalid JSON body", 400);
+    return jsonError("JSON inválido", 400);
   }
 
   const validation = createClubSchema.safeParse(body);
@@ -87,6 +87,6 @@ export async function POST(request: Request) {
 
     return jsonSuccess({ club }, 201);
   } catch {
-    return jsonError("Failed to create club", 500);
+    return jsonError("Falha ao criar clube", 500);
   }
 }

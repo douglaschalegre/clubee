@@ -16,5 +16,5 @@ interface RouteContext {
  * Deprecated: use Stripe checkout endpoint instead.
  */
 export async function POST(_request: Request, _context: RouteContext) {
-  return jsonError("Join via Stripe checkout", 410);
+  return jsonError("Entre pelo checkout", 410);
 }

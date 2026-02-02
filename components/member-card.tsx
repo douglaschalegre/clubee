@@ -31,7 +31,7 @@ export function MemberCard({
   toggleComponent,
   removeComponent,
 }: MemberCardProps) {
-  const joinDate = new Date(joinedAt).toLocaleDateString("en-US", {
+  const joinDate = new Date(joinedAt).toLocaleDateString("pt-BR", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -54,7 +54,7 @@ export function MemberCard({
           {role === "organizer" && (
             <Badge variant="outline" className="shrink-0 gap-1 border-primary/30 bg-primary/5 text-primary">
               <Crown className="h-3 w-3" />
-              Organizer
+              Organizador
             </Badge>
           )}
           <MembershipStatusBadge status={status} className="shrink-0" />
@@ -63,7 +63,7 @@ export function MemberCard({
         <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5" />
-            Joined {joinDate}
+            Entrou em {joinDate}
           </span>
           {email && (
             <span className="flex items-center gap-1.5">

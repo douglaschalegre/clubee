@@ -11,46 +11,47 @@ import {
 } from "lucide-react";
 
 const stats = [
-  { label: "Paid subscriptions", value: "Stripe-ready" },
-  { label: "Member controls", value: "Organizer-first" },
-  { label: "Access rules", value: "Automatic" },
+  { label: "Assinaturas pagas", value: "Pronto para o Stripe" },
+  { label: "Controle de membros", value: "Foco no organizador" },
+  { label: "Regras de acesso", value: "Automático" },
 ];
 
 const features = [
   {
-    title: "Paid memberships",
-    description: "Create recurring subscriptions with secure Stripe checkout.",
+    title: "Assinaturas pagas",
+    description: "Crie assinaturas recorrentes com checkout seguro.",
     icon: CreditCard,
   },
   {
-    title: "Organizer controls",
-    description: "Manage members, toggle access, and keep your club healthy.",
+    title: "Controles do organizador",
+    description:
+      "Gerencie membros, alterne acessos e mantenha seu clube saudável.",
     icon: Crown,
   },
   {
-    title: "Member directory",
-    description: "Build trust with clear membership visibility and status.",
+    title: "Diretório de membros",
+    description: "Crie confiança com visibilidade clara de membros e status.",
     icon: Users,
   },
   {
-    title: "Instant access",
-    description: "Automated join flow with immediate membership activation.",
+    title: "Acesso imediato",
+    description: "Fluxo de entrada automático com ativação imediata.",
     icon: Zap,
   },
 ];
 
 const steps = [
   {
-    title: "Create your club",
-    description: "Set a name, add a description, and choose your vibe.",
+    title: "Crie seu clube",
+    description: "Defina um nome, adicione uma descrição e escolha o estilo.",
   },
   {
-    title: "Set memberships",
-    description: "Offer paid access with Stripe and invite your community.",
+    title: "Defina assinaturas",
+    description: "Ofereça acesso pago com Stripe e convide sua comunidade.",
   },
   {
-    title: "Grow together",
-    description: "Manage members and build lasting, paid communities.",
+    title: "Cresçam juntos",
+    description: "Gerencie membros e construa comunidades pagas duradouras.",
   },
 ];
 
@@ -67,19 +68,19 @@ export default function LandingPage() {
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Honeycomb communities</span>
+              <span>Comunidades em colmeia</span>
             </div>
             <h1
               className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Build paid communities
-              <span className="block text-primary">that buzz.</span>
+              Crie comunidades pagas
+              <span className="block text-primary">que dão vida.</span>
             </h1>
             <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-              Clubee helps creators launch paid clubs with Stripe subscriptions,
-              member controls, and instant access. Simple to run, delightful to
-              join.
+              O Clubee ajuda criadores a lançar clubes pagos com assinaturas do
+              Stripe, controle de membros e acesso imediato. Simples de operar e
+              agradável de participar.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -89,12 +90,12 @@ export default function LandingPage() {
                 className="gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
               >
                 <Link href="/clubs/new">
-                  Start a Club
+                  Começar um clube
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button variant="outline" asChild size="lg">
-                <Link href="/clubs">Explore Clubs</Link>
+                <Link href="/clubs">Explorar clubes</Link>
               </Button>
             </div>
 
@@ -129,9 +130,9 @@ export default function LandingPage() {
                   <Shield className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold">Secure by design</div>
+                  <div className="text-sm font-semibold">Seguro por design</div>
                   <div className="text-xs text-muted-foreground">
-                    Payments & access handled automatically
+                    Pagamentos e acessos gerenciados automaticamente
                   </div>
                 </div>
               </div>
@@ -147,10 +148,11 @@ export default function LandingPage() {
             className="text-3xl font-bold tracking-tight"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Everything you need to run a paid club
+            Tudo o que você precisa para gerenciar um clube pago
           </h2>
           <p className="mt-2 text-muted-foreground">
-            Built for creators who want community without the admin overload.
+            Feito para criadores que querem comunidade sem sobrecarga
+            administrativa.
           </p>
         </div>
 
@@ -163,7 +165,10 @@ export default function LandingPage() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                 <feature.icon className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+              <h3
+                className="font-semibold"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 {feature.title}
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -182,15 +187,21 @@ export default function LandingPage() {
             className="text-3xl font-bold tracking-tight"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            How it works
+            Como funciona
           </h2>
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {steps.map((step, i) => (
-              <div key={step.title} className="relative rounded-2xl border border-border/60 bg-background/80 p-6">
+              <div
+                key={step.title}
+                className="relative rounded-2xl border border-border/60 bg-background/80 p-6"
+              >
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
                   {i + 1}
                 </div>
-                <h3 className="font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+                <h3
+                  className="font-semibold"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
                   {step.title}
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -212,12 +223,16 @@ export default function LandingPage() {
             </div>
           </div>
           <div>
-            <p className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
-              “Clubee made it effortless to run a paid community. I finally
-              have a place where members feel connected, and payments just work.”
+            <p
+              className="text-xl font-semibold"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              “O Clubee tornou fácil operar uma comunidade paga. Finalmente
+              tenho um lugar onde os membros se sentem conectados e os
+              pagamentos funcionam.”
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              Ava Romero · Founder, The Makers Hive
+              Ava Romero · Fundadora, The Makers Hive
             </p>
           </div>
         </div>
@@ -232,10 +247,10 @@ export default function LandingPage() {
               className="text-3xl font-bold tracking-tight"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Ready to launch your club?
+              Pronto para lançar seu clube?
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Free to start. You only pay when you get paying members.
+              Grátis para começar. Você só paga quando tiver membros pagantes.
             </p>
           </div>
           <Button
@@ -244,7 +259,7 @@ export default function LandingPage() {
             className="gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
           >
             <Link href="/clubs/new">
-              Start a Club
+              Começar um clube
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

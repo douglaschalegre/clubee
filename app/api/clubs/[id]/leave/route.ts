@@ -30,11 +30,11 @@ export async function POST(_request: Request, context: RouteContext) {
   });
 
   if (!club) {
-    return jsonError("Club not found", 404);
+    return jsonError("Clube não encontrado", 404);
   }
 
   if (club.organizerId === user.id) {
-    return jsonError("Organizer cannot leave their own club", 400);
+    return jsonError("O organizador não pode sair do próprio clube", 400);
   }
 
   const membership = await prisma.membership.findUnique({
@@ -44,7 +44,7 @@ export async function POST(_request: Request, context: RouteContext) {
   });
 
   if (!membership) {
-    return jsonError("Membership not found", 404);
+    return jsonError("Assinatura não encontrada", 404);
   }
 
   let cancellationError: unknown = null;
@@ -54,7 +54,7 @@ export async function POST(_request: Request, context: RouteContext) {
       await stripe.subscriptions.cancel(membership.stripeSubscriptionId);
     } catch (error) {
       cancellationError = error;
-      console.error("Failed to cancel Stripe subscription:", error);
+      console.error("Falha ao cancelar a assinatura:", error);
     }
   }
 
@@ -65,14 +65,14 @@ export async function POST(_request: Request, context: RouteContext) {
 
     if (cancellationError) {
       return jsonSuccess(
-        { deleted: true, warning: "Subscription cancellation failed" },
+        { deleted: true, warning: "Falha ao cancelar a assinatura" },
         200
       );
     }
 
     return jsonSuccess({ deleted: true }, 200);
   } catch (error) {
-    console.error("Failed to leave club:", error);
-    return jsonError("Failed to leave club", 500);
+    console.error("Falha ao sair do clube:", error);
+    return jsonError("Falha ao sair do clube", 500);
   }
 }

@@ -5,12 +5,12 @@ import "./globals.css";
 
 export const metadata = {
   title: "Clubee",
-  description: "Create and manage paid membership clubs.",
+  description: "Crie e gerencie clubes com assinaturas pagas.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         {/* Google Fonts: Sora (display) + Manrope (body) */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -21,7 +21,7 @@ export function MembershipStatusBadge({
         )}
       >
         <CheckCircle2 className="h-3 w-3" />
-        Active
+        Ativo
       </Badge>
     );
   }
@@ -35,7 +35,7 @@ export function MembershipStatusBadge({
       )}
     >
       <XCircle className="h-3 w-3" />
-      Inactive
+      Inativo
     </Badge>
   );
 }

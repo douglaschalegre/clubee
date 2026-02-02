@@ -65,7 +65,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
     <div className="space-y-8">
       <Breadcrumb
         items={[
-          { label: "Clubs", href: "/clubs" },
+          { label: "Clubes", href: "/clubs" },
           { label: club.name },
         ]}
       />
@@ -100,7 +100,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
                       className="badge-pop gap-1 border-primary/30 bg-primary/5 text-primary hover:bg-primary/20"
                     >
                       <Crown className="h-3 w-3" />
-                      Organizer
+                      Organizador
                     </Badge>
                   )}
                   {membership && (
@@ -118,10 +118,10 @@ export default async function ClubDetailPage({ params }: PageProps) {
                 <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Users className="h-4 w-4" />
-                    {club._count.memberships} {club._count.memberships === 1 ? "member" : "members"}
+                    {club._count.memberships} {club._count.memberships === 1 ? "membro" : "membros"}
                   </span>
                   <span>
-                    Organized by <span className="font-medium text-foreground">{club.organizer.name}</span>
+                    Organizado por <span className="font-medium text-foreground">{club.organizer.name}</span>
                   </span>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
                   >
                     <a href="/auth/login">
                       <Sparkles className="h-4 w-4" />
-                      Login to Join
+                      Entrar para participar
                     </a>
                   </Button>
                 ) : !isMember ? (
@@ -152,7 +152,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
                   >
                     <Link href={`/clubs/${id}/join`}>
                       <Sparkles className="h-4 w-4" />
-                      Join Club
+                      Participar do clube
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </Button>
@@ -163,12 +163,12 @@ export default async function ClubDetailPage({ params }: PageProps) {
                   >
                     <Link href={`/clubs/${id}/members`}>
                       <Users className="h-4 w-4" />
-                      View Members
+                      Ver membros
                     </Link>
                   </Button>
                 ) : (
                   <Button variant="secondary" disabled className="gap-2">
-                    Membership Inactive
+                    Assinatura inativa
                   </Button>
                 )}
 
@@ -180,7 +180,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
                   <Button variant="outline" asChild className="gap-2">
                     <Link href={`/clubs/${id}/settings`}>
                       <Settings className="h-4 w-4" />
-                      Settings
+                      Configurações
                     </Link>
                   </Button>
                 )}
@@ -197,19 +197,19 @@ export default async function ClubDetailPage({ params }: PageProps) {
             <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
               {club._count.memberships}
             </div>
-            <div className="text-sm text-muted-foreground">Total Members</div>
+            <div className="text-sm text-muted-foreground">Total de membros</div>
           </div>
           <div className="rounded-xl border border-border/60 bg-card p-5">
             <div className="text-2xl font-bold text-primary" style={{ fontFamily: "var(--font-display)" }}>
-              Active
+              Ativo
             </div>
-            <div className="text-sm text-muted-foreground">Your Status</div>
+            <div className="text-sm text-muted-foreground">Seu status</div>
           </div>
           <div className="rounded-xl border border-border/60 bg-card p-5">
             <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
-              {new Date(membership!.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+              {new Date(membership!.createdAt).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
             </div>
-            <div className="text-sm text-muted-foreground">Member Since</div>
+            <div className="text-sm text-muted-foreground">Membro desde</div>
           </div>
         </section>
       )}

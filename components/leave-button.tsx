@@ -38,7 +38,7 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to leave club");
+        throw new Error(data.error || "Falha ao sair do clube");
       }
 
       const data = await res.json();
@@ -48,7 +48,7 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
 
       window.location.href = `/clubs/${clubId}`;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Algo deu errado");
       setIsLeaving(false);
       setOpen(false);
     }
@@ -65,7 +65,7 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
         <AlertDialogTrigger asChild>
           <Button variant="outline" disabled={isLeaving} className="gap-2">
             <LogOut className="h-4 w-4" />
-            {isLeaving ? "Leaving..." : "Leave Club"}
+            {isLeaving ? "Saindo..." : "Sair do clube"}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent className="sm:max-w-md">
@@ -74,16 +74,16 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
               className="text-xl"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Leave this club?
+              Sair deste clube?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base">
-              Your membership will be canceled and you will lose access to club
-              content. You can rejoin later if needed.
+              Sua assinatura será cancelada e você perderá acesso ao conteúdo do
+              clube. Você pode entrar novamente depois, se necessário.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">
             <AlertDialogCancel disabled={isLeaving}>
-              Cancel
+              Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleLeave}
@@ -93,10 +93,10 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
               {isLeaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Leaving...
+                  Saindo...
                 </>
               ) : (
-                "Leave Club"
+                "Sair do clube"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

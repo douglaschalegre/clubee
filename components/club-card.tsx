@@ -51,7 +51,7 @@ export function ClubCard({ id, name, description, imageUrl }: ClubCardProps) {
             
             {/* Join prompt */}
             <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100">
-              <span>View club</span>
+              <span>Ver clube</span>
             </div>
           </div>
         </div>

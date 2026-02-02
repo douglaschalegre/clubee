@@ -12,7 +12,7 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
-    <nav aria-label="Breadcrumb" className="mb-6">
+    <nav aria-label="Trilha de navegação" className="mb-6">
       <ol className="flex items-center gap-1.5 text-sm">
         {/* Home link */}
         <li className="flex items-center">

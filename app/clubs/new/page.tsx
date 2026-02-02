@@ -15,8 +15,8 @@ export default async function NewClubPage() {
     <div className="mx-auto max-w-xl">
       <Breadcrumb
         items={[
-          { label: "Clubs", href: "/clubs" },
-          { label: "Create" },
+          { label: "Clubes", href: "/clubs" },
+          { label: "Criar" },
         ]}
       />
       
@@ -29,10 +29,10 @@ export default async function NewClubPage() {
           className="text-3xl font-bold tracking-tight"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          Create a Club
+          Criar um clube
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Start building your community. You&apos;ll be the organizer.
+          Comece a construir sua comunidade. Você será o organizador.
         </p>
       </div>
       

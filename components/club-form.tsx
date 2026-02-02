@@ -48,14 +48,14 @@ export function ClubForm({ mode, initialData, clubId }: ClubFormProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Something went wrong");
+          throw new Error(data.error || "Algo deu errado");
       }
 
       const data = await res.json();
       router.push(`/clubs/${data.club.id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Algo deu errado");
     } finally {
       setIsSubmitting(false);
     }
@@ -71,13 +71,13 @@ export function ClubForm({ mode, initialData, clubId }: ClubFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="name" className="text-sm font-medium">
-          Club Name <span className="text-destructive">*</span>
+          Nome do clube <span className="text-destructive">*</span>
         </Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="My Awesome Club"
+          placeholder="Meu clube incrível"
           required
           maxLength={100}
           className="h-11"
@@ -86,37 +86,37 @@ export function ClubForm({ mode, initialData, clubId }: ClubFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="description" className="text-sm font-medium">
-          Description
+          Descrição
         </Label>
         <Textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What is your club about? Share your mission and what members can expect..."
+          placeholder="Sobre o que é seu clube? Compartilhe sua missão e o que os membros podem esperar..."
           maxLength={500}
           rows={4}
           className="resize-none"
         />
         <p className="text-xs text-muted-foreground">
-          {description.length}/500 characters
+          {description.length}/500 caracteres
         </p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="imageUrl" className="text-sm font-medium flex items-center gap-2">
           <Image className="h-4 w-4 text-muted-foreground" />
-          Image URL
+          URL da imagem
         </Label>
         <Input
           id="imageUrl"
           type="url"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://example.com/image.jpg"
+          placeholder="https://exemplo.com/imagem.jpg"
           className="h-11"
         />
         <p className="text-xs text-muted-foreground">
-          Leave empty to use a generated avatar based on the club name.
+          Deixe em branco para usar um avatar gerado com base no nome do clube.
         </p>
       </div>
 
@@ -129,7 +129,7 @@ export function ClubForm({ mode, initialData, clubId }: ClubFormProps) {
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Cancel
+          Cancelar
         </Button>
         <Button 
           type="submit" 
@@ -139,12 +139,12 @@ export function ClubForm({ mode, initialData, clubId }: ClubFormProps) {
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              {mode === "create" ? "Creating..." : "Saving..."}
+               {mode === "create" ? "Criando..." : "Salvando..."}
             </>
           ) : (
             <>
               <Save className="h-4 w-4" />
-              {mode === "create" ? "Create Club" : "Save Changes"}
+               {mode === "create" ? "Criar clube" : "Salvar alterações"}
             </>
           )}
         </Button>

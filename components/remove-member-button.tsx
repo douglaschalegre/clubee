@@ -22,7 +22,7 @@ export function RemoveMemberButton({
   async function handleRemove() {
     if (
       !confirm(
-        `Remove ${memberName} from the club? Their membership will be deleted.`
+        `Remover ${memberName} do clube? A assinatura será excluída.`
       )
     ) {
       return;
@@ -37,12 +37,12 @@ export function RemoveMemberButton({
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to remove member");
+        throw new Error(data.error || "Falha ao remover membro");
       }
 
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Something went wrong");
+      alert(err instanceof Error ? err.message : "Algo deu errado");
       setIsRemoving(false);
     }
   }
@@ -54,7 +54,7 @@ export function RemoveMemberButton({
       variant="ghost"
       size="icon-sm"
       className="text-destructive hover:text-destructive hover:bg-destructive/10"
-      title="Remove member"
+      title="Remover membro"
     >
       <Trash2 className="size-4" />
     </Button>

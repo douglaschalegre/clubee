@@ -30,16 +30,16 @@ export default async function ClubsPage() {
           <div className="max-w-xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Community Awaits</span>
+              <span>A comunidade espera</span>
             </div>
             <h1 
               className="text-4xl font-bold tracking-tight sm:text-5xl"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Discover Clubs
+              Descubra clubes
             </h1>
             <p className="mt-3 text-lg text-muted-foreground">
-              Find your tribe. Join communities that match your passions and interests.
+              Encontre sua tribo. Entre em comunidades que combinam com suas paixões e interesses.
             </p>
           </div>
           
@@ -51,7 +51,7 @@ export default async function ClubsPage() {
             >
               <Link href="/clubs/new">
                 <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
-                Create Club
+                Criar clube
               </Link>
             </Button>
           )}
@@ -70,18 +70,18 @@ export default async function ClubsPage() {
               className="text-xl font-semibold"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              No clubs yet
+              Nenhum clube ainda
             </h2>
             <p className="mx-auto mt-2 max-w-sm text-muted-foreground">
               {session
-                ? "Be the first to create a club and start building your community!"
-                : "Sign up to create the first club and start something amazing."}
+                ? "Seja o primeiro a criar um clube e começar sua comunidade!"
+                : "Crie uma conta para fazer o primeiro clube e iniciar algo incrível."}
             </p>
             {session && (
               <Button asChild className="mt-6 shadow-honey">
                 <Link href="/clubs/new">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Club
+                  Criar clube
                 </Link>
               </Button>
             )}
@@ -91,7 +91,7 @@ export default async function ClubsPage() {
         <section>
           <div className="mb-6 flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
-              {clubs.length} {clubs.length === 1 ? "club" : "clubs"} available
+              {clubs.length} {clubs.length === 1 ? "clube" : "clubes"} disponíveis
             </p>
           </div>
           

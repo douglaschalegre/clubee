@@ -24,13 +24,13 @@ export function DeleteClubButton({ clubId, clubName }: DeleteClubButtonProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to delete club");
+        throw new Error(data.error || "Falha ao excluir o clube");
       }
 
       router.push("/clubs");
       router.refresh();
     } catch (err) {
-      console.error("Failed to delete club:", err);
+      console.error("Falha ao excluir o clube:", err);
       setIsDeleting(false);
     }
   }
@@ -41,7 +41,7 @@ export function DeleteClubButton({ clubId, clubName }: DeleteClubButtonProps) {
         variant="destructive"
         onClick={() => setShowConfirm(true)}
       >
-        Delete Club
+        Excluir clube
       </Button>
     );
   }
@@ -49,8 +49,8 @@ export function DeleteClubButton({ clubId, clubName }: DeleteClubButtonProps) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Are you sure you want to delete <strong>{clubName}</strong>? This action
-        cannot be undone.
+        Tem certeza de que deseja excluir <strong>{clubName}</strong>? Esta ação
+        não pode ser desfeita.
       </p>
       <div className="flex gap-3">
         <Button
@@ -58,14 +58,14 @@ export function DeleteClubButton({ clubId, clubName }: DeleteClubButtonProps) {
           onClick={handleDelete}
           disabled={isDeleting}
         >
-          {isDeleting ? "Deleting..." : "Yes, Delete"}
+          {isDeleting ? "Excluindo..." : "Sim, excluir"}
         </Button>
         <Button
           variant="outline"
           onClick={() => setShowConfirm(false)}
           disabled={isDeleting}
         >
-          Cancel
+          Cancelar
         </Button>
       </div>
     </div>

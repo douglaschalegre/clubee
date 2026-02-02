@@ -25,10 +25,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     clubId = body.clubId;
     if (!clubId) {
-      return jsonError("clubId is required", 400);
+      return jsonError("clubId é obrigatório", 400);
     }
   } catch {
-    return jsonError("Invalid request body", 400);
+    return jsonError("Corpo da requisição inválido", 400);
   }
 
   // Check if club exists
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   });
 
   if (!club) {
-    return jsonError("Club not found", 404);
+    return jsonError("Clube não encontrado", 404);
   }
 
   // Check if already a member
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   });
 
   if (existingMembership) {
-    return jsonError("Already a member of this club", 400);
+    return jsonError("Você já é membro deste clube", 400);
   }
 
   // Get or create Stripe customer
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
   // Get price ID from env (in production, clubs would have their own prices)
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId) {
-    return jsonError("Stripe not configured", 500);
+    return jsonError("Stripe não configurado", 500);
   }
 
   // Build success and cancel URLs
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
 
     return Response.json({ url: session.url });
   } catch (error) {
-    console.error("Stripe checkout error:", error);
-    return jsonError("Failed to create checkout session", 500);
+    console.error("Erro no checkout:", error);
+    return jsonError("Falha ao criar sessão de checkout", 500);
   }
 }

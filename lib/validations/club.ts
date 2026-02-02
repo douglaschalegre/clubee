@@ -1,15 +1,15 @@
 import { z } from "zod/v4";
 
 export const createClubSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name too long"),
-  description: z.string().max(500, "Description too long").optional(),
-  imageUrl: z.url("Invalid image URL").optional(),
+  name: z.string().min(1, "Nome obrigatório").max(100, "Nome muito longo"),
+  description: z.string().max(500, "Descrição muito longa").optional(),
+  imageUrl: z.url("URL de imagem inválida").optional(),
 });
 
 export const updateClubSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name too long").optional(),
-  description: z.string().max(500, "Description too long").optional(),
-  imageUrl: z.url("Invalid image URL").optional(),
+  name: z.string().min(1, "Nome obrigatório").max(100, "Nome muito longo").optional(),
+  description: z.string().max(500, "Descrição muito longa").optional(),
+  imageUrl: z.url("URL de imagem inválida").optional(),
 });
 
 export const updateMembershipStatusSchema = z.object({

@@ -40,12 +40,12 @@ export function MembershipToggle({
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to update status");
+        throw new Error(data.error || "Falha ao atualizar o status");
       }
 
       router.refresh();
     } catch (err) {
-      console.error("Failed to toggle status:", err);
+      console.error("Falha ao alternar o status:", err);
     } finally {
       setIsUpdating(false);
     }
@@ -62,8 +62,8 @@ export function MembershipToggle({
       {isUpdating
         ? "..."
         : currentStatus === "active"
-          ? "Set Inactive"
-          : "Set Active"}
+          ? "Definir inativo"
+          : "Definir ativo"}
     </Button>
   );
 }

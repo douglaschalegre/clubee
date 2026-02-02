@@ -78,6 +78,6 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return jsonSuccess({ members, isOrganizer });
   } catch {
-    return jsonError("Failed to fetch members", 500);
+    return jsonError("Falha ao buscar membros", 500);
   }
 }

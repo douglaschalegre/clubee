@@ -36,7 +36,7 @@ export async function Header() {
             href="/clubs"
             className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
-            Explore
+            Explorar
           </Link>
         </nav>
 
@@ -58,7 +58,7 @@ export async function Header() {
                 className="text-muted-foreground hover:text-foreground"
                 asChild
               >
-                <a href="/auth/logout">Logout</a>
+                <a href="/auth/logout">Sair</a>
               </Button>
             </>
           ) : (
@@ -69,14 +69,14 @@ export async function Header() {
                 className="text-muted-foreground hover:text-foreground"
                 asChild
               >
-                <a href="/auth/login">Login</a>
+                <a href="/auth/login">Entrar</a>
               </Button>
               <Button 
                 size="sm" 
                 className="shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
                 asChild
               >
-                <a href="/auth/login?screen_hint=signup">Sign up</a>
+                <a href="/auth/login?screen_hint=signup">Criar conta</a>
               </Button>
             </>
           )}
