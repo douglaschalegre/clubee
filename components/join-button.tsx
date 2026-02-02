@@ -24,7 +24,18 @@ export function JoinButton({ clubId }: JoinButtonProps) {
         body: JSON.stringify({ clubId }),
       });
 
-      const data = await res.json();
+      // Check if response has content
+      const text = await res.text();
+      if (!text) {
+        throw new Error(`Empty response from server (status: ${res.status})`);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Invalid JSON response: ${text.slice(0, 100)}`);
+      }
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to create checkout session");

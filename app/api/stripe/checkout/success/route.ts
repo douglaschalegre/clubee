@@ -14,6 +14,8 @@ export async function GET(request: Request) {
     redirect("/clubs?error=missing_session");
   }
 
+  let clubId: string | undefined;
+
   try {
     // Retrieve the checkout session
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -24,7 +26,7 @@ export async function GET(request: Request) {
       redirect("/clubs?error=payment_incomplete");
     }
 
-    const clubId = session.metadata?.clubId;
+    clubId = session.metadata?.clubId;
     const userId = session.metadata?.userId;
 
     if (!clubId || !userId) {
@@ -72,11 +74,15 @@ export async function GET(request: Request) {
         },
       });
     }
-
-    // Redirect to the club page
-    redirect(`/clubs/${clubId}?joined=true`);
   } catch (error) {
+    // Check if it's a redirect error (Next.js throws these intentionally)
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+      throw error;
+    }
     console.error("Checkout success error:", error);
     redirect("/clubs?error=checkout_failed");
   }
+
+  // Redirect to the club page (outside try/catch to avoid catching redirect)
+  redirect(`/clubs/${clubId}?joined=true`);
 }
