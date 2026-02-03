@@ -237,12 +237,13 @@ export function EventDetailDrawer({
             </div>
 
             {/* RSVP buttons */}
-            {canViewEventDetails && !isOrganizer && (
+            {canViewEventDetails && (
               <EventRsvpButtons
                 clubId={clubId}
                 eventId={event.id}
                 initialStatus={event.rsvpStatus ?? null}
                 onStatusChange={handleStatusChange}
+                isOrganizer={isOrganizer}
               />
             )}
 
