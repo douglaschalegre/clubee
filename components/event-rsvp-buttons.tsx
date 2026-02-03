@@ -7,12 +7,14 @@ interface EventRsvpButtonsProps {
   clubId: string;
   eventId: string;
   initialStatus?: "going" | "not_going" | null;
+  onStatusChange?: (status: "going" | "not_going") => void;
 }
 
 export function EventRsvpButtons({
   clubId,
   eventId,
   initialStatus = null,
+  onStatusChange,
 }: EventRsvpButtonsProps) {
   const [status, setStatus] = useState(initialStatus);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -46,6 +48,7 @@ export function EventRsvpButtons({
       }
 
       setStatus(nextStatus);
+      onStatusChange?.(nextStatus);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado");
     } finally {

@@ -12,11 +12,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { EventDeleteButton } from "@/components/event-delete-button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { EventForm } from "@/components/event-form";
-import { EventMapPreview } from "@/components/event-map-preview";
-import { EventRsvpButtons } from "@/components/event-rsvp-buttons";
+import {
+  EventDetailDrawer,
+  type DrawerEvent,
+} from "@/components/event-detail-drawer";
 import { CalendarDays, Clock, MapPin, Plus, Video } from "lucide-react";
+
+type EventCreator = {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+};
 
 type EventSummary = {
   id: string;
@@ -28,6 +36,7 @@ type EventSummary = {
   locationValue?: string | null;
   rsvpCount: number;
   rsvpStatus?: "going" | "not_going" | null;
+  createdBy?: EventCreator | null;
 };
 
 interface ClubEventsSectionProps {
@@ -49,18 +58,13 @@ export function ClubEventsSection({
 }: ClubEventsSectionProps) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<DrawerEvent | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   function formatDate(date: Date, tz: string) {
     return new Intl.DateTimeFormat("pt-BR", {
       day: "numeric",
       month: "short",
-      timeZone: tz,
-    }).format(date);
-  }
-
-  function formatWeekday(date: Date, tz: string) {
-    return new Intl.DateTimeFormat("pt-BR", {
-      weekday: "long",
       timeZone: tz,
     }).format(date);
   }
@@ -76,6 +80,11 @@ export function ClubEventsSection({
   function handleSaved() {
     setDialogOpen(false);
     router.refresh();
+  }
+
+  function openDrawer(event: EventSummary) {
+    setSelectedEvent(event);
+    setDrawerOpen(true);
   }
 
   return (
@@ -143,116 +152,90 @@ export function ClubEventsSection({
             </CardContent>
           </Card>
         ) : (
-          <div className="relative">
-            <div className="absolute left-6 top-2 h-full w-px bg-border/60" />
-            <div className="space-y-6">
-              {events.map((event) => {
-                const startDate = new Date(event.startsAt);
-                const dateLabel = formatDate(startDate, event.timezone);
-                const weekdayLabel = formatWeekday(startDate, event.timezone);
-                const timeLabel = formatTime(startDate, event.timezone);
+          <div className="space-y-4">
+            {events.map((event) => {
+              const startDate = new Date(event.startsAt);
+              const dateLabel = formatDate(startDate, event.timezone);
+              const timeLabel = formatTime(startDate, event.timezone);
+              const creatorInitials = event.createdBy?.name
+                ?.split(" ")
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase();
 
-                return (
-                  <div key={event.id} className="relative pl-14">
-                    <div className="absolute left-[18px] top-2 h-4 w-4 rounded-full border-2 border-primary bg-background shadow" />
-                    <div className="grid gap-4 rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col items-start">
-                            <span className="text-sm uppercase tracking-wide text-muted-foreground">
-                              {dateLabel}
-                            </span>
-                            <span
-                              className="text-sm font-semibold capitalize"
-                              style={{ fontFamily: "var(--font-display)" }}
-                            >
-                              {weekdayLabel}
-                            </span>
-                          </div>
-                          <div className="h-10 w-px bg-border/60" />
-                          <div>
-                            <h3
-                              className="text-lg font-semibold"
-                              style={{ fontFamily: "var(--font-display)" }}
-                            >
-                              {event.title}
-                            </h3>
-                            <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                              <span className="inline-flex items-center gap-1.5">
-                                <Clock className="h-4 w-4" />
-                                {timeLabel}
-                              </span>
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2 py-0.5 text-xs">
-                                {event.timezone}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+              return (
+                <button
+                  key={event.id}
+                  type="button"
+                  onClick={() => openDrawer(event)}
+                  className="w-full text-left rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <h3
+                    className="text-lg font-semibold"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    {event.title}
+                  </h3>
 
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full border border-border/60 px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                            {event.rsvpCount}{" "}
-                            {event.rsvpCount === 1
-                              ? "confirmação"
-                              : "confirmações"}
+                  <div className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
+                    {/* Creator */}
+                    {event.createdBy && (
+                      <div className="flex items-center gap-2">
+                        <Avatar size="sm">
+                          {event.createdBy.avatarUrl && (
+                            <AvatarImage src={event.createdBy.avatarUrl} />
+                          )}
+                          <AvatarFallback>{creatorInitials}</AvatarFallback>
+                        </Avatar>
+                        <span>
+                          Organizado por{" "}
+                          <span className="font-medium text-foreground">
+                            {event.createdBy.name}
                           </span>
-                          {isOrganizer && (
-                            <EventDeleteButton
-                              clubId={clubId}
-                              eventId={event.id}
-                              eventTitle={event.title}
-                            />
-                          )}
-                        </div>
+                        </span>
                       </div>
+                    )}
 
-                      {canViewEventDetails ? (
-                        <div className="grid gap-3 text-sm text-muted-foreground">
-                          {event.description && (
-                            <p className="leading-relaxed">
-                              {event.description}
-                            </p>
-                          )}
-                          {event.locationType && event.locationValue && (
-                            <div className="inline-flex items-center gap-2">
-                              {event.locationType === "remote" && (
-                                <>
-                                  <Video className="h-4 w-4" />
-                                  <span>{event.locationValue}</span>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Faça login e assine para ver os detalhes do evento.
-                        </p>
-                      )}
-
-                      {canViewEventDetails &&
-                        event.locationType === "physical" && (
-                          <EventMapPreview
-                            apiKey={mapApiKey}
-                            address={event.locationValue}
-                          />
-                        )}
-
-                      {canViewEventDetails && !isOrganizer && (
-                        <EventRsvpButtons
-                          clubId={clubId}
-                          eventId={event.id}
-                          initialStatus={event.rsvpStatus ?? null}
-                        />
-                      )}
+                    {/* Time */}
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      <span>
+                        {timeLabel} &middot; {dateLabel}
+                      </span>
                     </div>
+
+                    {/* Location (text only) */}
+                    {event.locationType && event.locationValue && (
+                      <div className="flex items-center gap-1.5">
+                        {event.locationType === "physical" ? (
+                          <MapPin className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <Video className="h-4 w-4 shrink-0" />
+                        )}
+                        <span className="truncate">{event.locationValue}</span>
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {selectedEvent && (
+        <EventDetailDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          event={selectedEvent}
+          clubId={clubId}
+          isOrganizer={isOrganizer}
+          canViewEventDetails={canViewEventDetails}
+          mapApiKey={mapApiKey}
+          isLoggedIn={isLoggedIn}
+        />
+      )}
     </section>
   );
 }

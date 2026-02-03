@@ -119,6 +119,7 @@ export async function POST(request: Request, context: RouteContext) {
         timezone: data.timezone,
         locationType: data.locationType,
         locationValue: data.locationValue,
+        createdById: dbUser.id,
       },
     });
 

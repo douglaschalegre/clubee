@@ -73,6 +73,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
     orderBy: { startsAt: "asc" },
     include: {
       _count: { select: { rsvps: true } },
+      createdBy: { select: { id: true, name: true, avatarUrl: true } },
       rsvps: dbUser?.id
         ? {
             where: { userId: dbUser.id },
@@ -247,6 +248,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
           locationValue: event.locationValue,
           rsvpCount: event._count.rsvps,
           rsvpStatus: event.rsvps?.[0]?.status ?? null,
+          createdBy: event.createdBy ?? null,
         }))}
         isOrganizer={isOrganizer}
         canViewEventDetails={canViewEventDetails}

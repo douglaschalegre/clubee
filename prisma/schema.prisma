@@ -54,6 +54,7 @@ model User {
   memberships    Membership[]
   organizedClubs Club[]       @relation("ClubOrganizer")
   eventRsvps     EventRsvp[]
+  createdEvents  Event[]      @relation("EventCreator")
 
   @@map("users")
 }
@@ -112,6 +113,9 @@ model Event {
 
   clubId String @map("club_id")
   club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  createdById String? @map("created_by_id")
+  createdBy   User?   @relation("EventCreator", fields: [createdById], references: [id])
 
   rsvps EventRsvp[]
 

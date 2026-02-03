@@ -174,7 +174,9 @@ export function EventForm({
         </div>
       )}
       <div className="space-y-2">
-        <Label htmlFor="title">Título</Label>
+        <Label htmlFor="title">
+          Título <span className="text-destructive">*</span>
+        </Label>
         <Input
           id="title"
           value={title}
@@ -184,7 +186,9 @@ export function EventForm({
         />
       </div>
       <div className="space-y-2">
-        <Label>Local</Label>
+        <Label>
+          Local <span className="text-destructive">*</span>
+        </Label>
         <div className="space-y-3">
           <Tabs
             value={locationType}
@@ -227,17 +231,22 @@ export function EventForm({
         <EventMapPreview apiKey={mapApiKey} address={locationValue} />
       )}
       <div className="space-y-2">
-        <Label htmlFor="description">Descrição</Label>
+        <Label htmlFor="description">
+          Descrição <span className="text-destructive">*</span>
+        </Label>
         <Textarea
           id="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           rows={3}
+          required
         />
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="date">Data</Label>
+          <Label htmlFor="date">
+            Data <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="date"
             type="date"
@@ -247,7 +256,9 @@ export function EventForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="time">Hora</Label>
+          <Label htmlFor="time">
+            Hora <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="time"
             type="time"
@@ -257,8 +268,10 @@ export function EventForm({
           />
         </div>
         <div className="space-y-2">
-          <Label>Fuso horário</Label>
-          <Select value={timezone} onValueChange={setTimezone}>
+          <Label>
+            Fuso horário <span className="text-destructive">*</span>
+          </Label>
+          <Select value={timezone} onValueChange={setTimezone} required>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
