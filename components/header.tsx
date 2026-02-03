@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { auth0 } from "@/lib/auth0";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -9,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LoginButtons } from "@/components/login-buttons";
 
 export async function Header() {
   const session = await auth0.getSession();
@@ -78,23 +78,7 @@ export async function Header() {
               </DropdownMenu>
             </>
           ) : (
-            <>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-                asChild
-              >
-                <a href="/auth/login">Entrar</a>
-              </Button>
-              <Button 
-                size="sm" 
-                className="shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
-                asChild
-              >
-                <a href="/auth/login?screen_hint=signup">Criar conta</a>
-              </Button>
-            </>
+            <LoginButtons />
           )}
         </div>
       </div>
