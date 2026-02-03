@@ -3,7 +3,13 @@ import { redirect, notFound } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ClubForm } from "@/components/club-form";
 import { DeleteClubButton } from "@/components/delete-club-button";
 import { MemberCard } from "@/components/member-card";
@@ -12,7 +18,15 @@ import { TransferOwnership } from "@/components/transfer-ownership";
 import { StripeConnectSetup } from "@/components/stripe-connect-setup";
 import { ClubPricingForm } from "@/components/club-pricing-form";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { ArrowLeft, Settings, AlertTriangle, Wrench, Users, CreditCard, DollarSign } from "lucide-react";
+import {
+  ArrowLeft,
+  Settings,
+  AlertTriangle,
+  Wrench,
+  Users,
+  CreditCard,
+  DollarSign,
+} from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -103,7 +117,7 @@ export default async function SettingsPage({ params }: PageProps) {
             <Settings className="h-6 w-6 text-muted-foreground" />
           </div>
           <div>
-            <h1 
+            <h1
               className="text-2xl font-bold tracking-tight"
               style={{ fontFamily: "var(--font-display)" }}
             >
@@ -114,7 +128,7 @@ export default async function SettingsPage({ params }: PageProps) {
             </p>
           </div>
         </div>
-        
+
         <Button variant="outline" asChild className="gap-2 shrink-0">
           <Link href={`/clubs/${clubId}`}>
             <ArrowLeft className="h-4 w-4" />
@@ -127,7 +141,9 @@ export default async function SettingsPage({ params }: PageProps) {
       <Card className="overflow-hidden">
         <CardHeader className="border-b bg-muted/30">
           <CardTitle className="text-lg">Detalhes do clube</CardTitle>
-          <CardDescription>Atualize o nome, a descrição e a imagem do seu clube.</CardDescription>
+          <CardDescription>
+            Atualize o nome, a descrição e a imagem do seu clube.
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <ClubForm
@@ -154,7 +170,10 @@ export default async function SettingsPage({ params }: PageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          <StripeConnectSetup clubId={clubId} status={dbUser.stripeConnectStatus} />
+          <StripeConnectSetup
+            clubId={clubId}
+            status={dbUser.stripeConnectStatus}
+          />
         </CardContent>
       </Card>
 
@@ -242,7 +261,8 @@ export default async function SettingsPage({ params }: PageProps) {
             Zona de perigo
           </CardTitle>
           <CardDescription>
-            Exclua este clube e todos os dados permanentemente. Esta ação não pode ser desfeita.
+            Exclua este clube e todos os dados permanentemente. Esta ação não
+            pode ser desfeita.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">

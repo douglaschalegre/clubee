@@ -1,11 +1,28 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Header } from "@/components/header";
 
 import "./globals.css";
 
-export const metadata = {
+const APP_URL = process.env.APP_BASE_URL || "http://localhost:3000";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(APP_URL),
   title: "Clubee",
   description: "Crie e gerencie clubes com assinaturas pagas.",
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: APP_URL,
+    siteName: "Clubee",
+    title: "Clubee",
+    description: "Crie e gerencie clubes com assinaturas pagas.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Clubee",
+    description: "Crie e gerencie clubes com assinaturas pagas.",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

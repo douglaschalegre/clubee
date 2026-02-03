@@ -1,19 +1,72 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
+import { generateClubMetadata, generateEventMetadata } from "@/lib/metadata";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { ClubAvatar } from "@/components/club-avatar";
 import { MembershipStatusBadge } from "@/components/membership-status-badge";
 import { LeaveButton } from "@/components/leave-button";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ClubEventsSection } from "@/components/club-events-section";
-import { Users, Settings, Crown, Sparkles, ArrowRight, AlertTriangle } from "lucide-react";
+import {
+  Users,
+  Settings,
+  Crown,
+  Sparkles,
+  ArrowRight,
+  AlertTriangle,
+} from "lucide-react";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ event?: string }>;
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const { event: eventId } = await searchParams;
+
+  // Fetch club with organizer info
+  const club = await prisma.club.findUnique({
+    where: { id },
+    include: {
+      organizer: {
+        select: { name: true },
+      },
+    },
+  });
+
+  // If club not found, return basic metadata (Next.js will show 404)
+  if (!club) {
+    return {
+      title: "Clube não encontrado | Clubee",
+      description: "Este clube não existe ou foi removido.",
+    };
+  }
+
+  // If event parameter is present, fetch event and return event metadata
+  if (eventId) {
+    const event = await prisma.event.findFirst({
+      where: {
+        id: eventId,
+        clubId: id,
+      },
+    });
+
+    // If event found, generate event metadata
+    if (event) {
+      return generateEventMetadata(event, club);
+    }
+  }
+
+  // Return club metadata (default case or if event not found)
+  return generateClubMetadata(club);
 }
 
 export default async function ClubDetailPage({ params }: PageProps) {
@@ -65,8 +118,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
   const isActiveMember = membership?.status === "active";
   const canViewEventDetails = isOrganizer || isActiveMember;
   const canAcceptPayments =
-    club.organizer.stripeConnectStatus === "active" &&
-    !!club.stripePriceId;
+    club.organizer.stripeConnectStatus === "active" && !!club.stripePriceId;
 
   const events = await prisma.event.findMany({
     where: { clubId: id },
@@ -227,7 +279,8 @@ export default async function ClubDetailPage({ params }: PageProps) {
               Pagamentos não configurados.
             </span>{" "}
             <span className="text-amber-700 dark:text-amber-300">
-              Configure o Stripe e defina um preço para que membros possam participar.
+              Configure o Stripe e defina um preço para que membros possam
+              participar.
             </span>
           </div>
           <Button asChild size="sm" variant="outline" className="shrink-0">
