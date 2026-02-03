@@ -4,7 +4,6 @@ import { Calendar, MapPin, Video, Users } from "lucide-react";
 interface EventCardProps {
   title: string;
   startsAt: Date | string;
-  endsAt?: Date | string | null;
   timezone: string;
   description?: string | null;
   locationType?: "remote" | "physical" | null;
@@ -32,7 +31,6 @@ function formatTime(value: Date | string) {
 export function EventCard({
   title,
   startsAt,
-  endsAt,
   timezone,
   description,
   locationType,
@@ -54,7 +52,6 @@ export function EventCard({
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
               {formatDate(startsAt)} • {formatTime(startsAt)}
-              {endsAt ? ` – ${formatTime(endsAt)}` : ""}
             </span>
             <Badge variant="outline" className="gap-1">
               {timezone}

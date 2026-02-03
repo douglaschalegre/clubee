@@ -154,7 +154,7 @@ export default async function SettingsPage({ params }: PageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          <StripeConnectSetup status={dbUser.stripeConnectStatus} />
+          <StripeConnectSetup clubId={clubId} status={dbUser.stripeConnectStatus} />
         </CardContent>
       </Card>
 

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { updateEventSchema } from "@/lib/validations/event";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import { naiveDateTimeToUTC } from "@/lib/timezone";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -39,7 +40,6 @@ export async function GET(_request: Request, context: RouteContext) {
         id: event.id,
         title: event.title,
         startsAt: event.startsAt,
-        endsAt: event.endsAt,
         timezone: event.timezone,
       },
       canViewDetails: false,
@@ -67,7 +67,6 @@ export async function GET(_request: Request, context: RouteContext) {
         id: event.id,
         title: event.title,
         startsAt: event.startsAt,
-        endsAt: event.endsAt,
         timezone: event.timezone,
       },
       canViewDetails: false,
@@ -126,13 +125,29 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
+    // If startsAt is being updated, resolve the timezone for conversion
+    let startsAtUTC: Date | undefined;
+    if (data.startsAt !== undefined) {
+      let tz = data.timezone;
+      if (!tz) {
+        const existing = await prisma.event.findUnique({
+          where: { id: eventId },
+          select: { timezone: true },
+        });
+        tz = existing?.timezone;
+      }
+      if (!tz) {
+        return jsonError("Fuso horário obrigatório ao alterar a data", 400);
+      }
+      startsAtUTC = naiveDateTimeToUTC(data.startsAt, tz);
+    }
+
     const event = await prisma.event.update({
       where: { id: eventId, clubId },
       data: {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
-        ...(data.startsAt !== undefined && { startsAt: new Date(data.startsAt) }),
-        ...(data.endsAt !== undefined && { endsAt: data.endsAt ? new Date(data.endsAt) : null }),
+        ...(startsAtUTC !== undefined && { startsAt: startsAtUTC }),
         ...(data.timezone !== undefined && { timezone: data.timezone }),
         ...(data.locationType !== undefined && { locationType: data.locationType }),
         ...(data.locationValue !== undefined && { locationValue: data.locationValue }),

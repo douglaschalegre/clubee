@@ -5,6 +5,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const TIMEZONES = [
+  { value: "America/Sao_Paulo", label: "Brasília (GMT-3)" },
+  { value: "America/Manaus", label: "Manaus (GMT-4)" },
+  { value: "America/Belem", label: "Belém (GMT-3)" },
+  { value: "America/Recife", label: "Recife (GMT-3)" },
+  { value: "America/Fortaleza", label: "Fortaleza (GMT-3)" },
+  { value: "America/Cuiaba", label: "Cuiabá (GMT-4)" },
+  { value: "America/Rio_Branco", label: "Rio Branco (GMT-5)" },
+  { value: "America/Noronha", label: "Noronha (GMT-2)" },
+  { value: "America/New_York", label: "Nova York (GMT-5)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (GMT-8)" },
+  { value: "Europe/London", label: "Londres (GMT+0)" },
+  { value: "Europe/Lisbon", label: "Lisboa (GMT+0)" },
+  { value: "Europe/Paris", label: "Paris (GMT+1)" },
+  { value: "Asia/Tokyo", label: "Tóquio (GMT+9)" },
+];
 
 interface EventFormProps {
   clubId: string;
@@ -14,7 +39,6 @@ interface EventFormProps {
     title?: string;
     description?: string | null;
     startsAt?: string;
-    endsAt?: string | null;
     timezone?: string;
     locationType?: "remote" | "physical";
     locationValue?: string;
@@ -25,6 +49,28 @@ interface EventFormProps {
   onSaved?: () => void;
 }
 
+function parseInitialDateTime(startsAt?: string, timezone?: string) {
+  if (!startsAt) return { date: "", time: "" };
+  const d = new Date(startsAt);
+  if (isNaN(d.getTime())) return { date: "", time: "" };
+  const tz = timezone || "America/Sao_Paulo";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)!.value;
+  return {
+    date: `${get("year")}-${get("month")}-${get("day")}`,
+    time: `${get("hour")}:${get("minute")}`,
+  };
+}
+
 export function EventForm({
   clubId,
   eventId,
@@ -32,21 +78,33 @@ export function EventForm({
   initialData,
   onSaved,
 }: EventFormProps) {
-  const [title, setTitle] = useState(initialData?.title ?? "");
-  const [description, setDescription] = useState(initialData?.description ?? "");
-  const [startsAt, setStartsAt] = useState(initialData?.startsAt ?? "");
-  const [endsAt, setEndsAt] = useState(initialData?.endsAt ?? "");
-  const [timezone, setTimezone] = useState(initialData?.timezone ?? "America/Sao_Paulo");
-  const [locationType, setLocationType] = useState<"remote" | "physical">(
-    initialData?.locationType ?? "remote"
+  const initial = parseInitialDateTime(
+    initialData?.startsAt,
+    initialData?.timezone,
   );
-  const [locationValue, setLocationValue] = useState(initialData?.locationValue ?? "");
-  const [locationPlaceId, setLocationPlaceId] = useState(initialData?.locationPlaceId ?? "");
+  const [title, setTitle] = useState(initialData?.title ?? "");
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
+  );
+  const [date, setDate] = useState(initial.date);
+  const [time, setTime] = useState(initial.time);
+  const [timezone, setTimezone] = useState(
+    initialData?.timezone ?? "America/Sao_Paulo",
+  );
+  const [locationType, setLocationType] = useState<"remote" | "physical">(
+    initialData?.locationType ?? "remote",
+  );
+  const [locationValue, setLocationValue] = useState(
+    initialData?.locationValue ?? "",
+  );
+  const [locationPlaceId, setLocationPlaceId] = useState(
+    initialData?.locationPlaceId ?? "",
+  );
   const [locationLat, setLocationLat] = useState<string>(
-    initialData?.locationLat != null ? String(initialData.locationLat) : ""
+    initialData?.locationLat != null ? String(initialData.locationLat) : "",
   );
   const [locationLng, setLocationLng] = useState<string>(
-    initialData?.locationLng != null ? String(initialData.locationLng) : ""
+    initialData?.locationLng != null ? String(initialData.locationLng) : "",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +114,19 @@ export function EventForm({
     setIsSubmitting(true);
     setError(null);
 
+    if (!date) {
+      setError("Data é obrigatória");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const startsAt = `${date}T${time || "00:00"}`;
+
     try {
       const payload = {
         title,
         description: description || undefined,
         startsAt,
-        endsAt: endsAt || undefined,
         timezone,
         locationType,
         locationValue,
@@ -78,7 +143,7 @@ export function EventForm({
           method: mode === "create" ? "POST" : "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       const text = await res.text();
@@ -101,8 +166,8 @@ export function EventForm({
       if (mode === "create") {
         setTitle("");
         setDescription("");
-        setStartsAt("");
-        setEndsAt("");
+        setDate("");
+        setTime("");
         setLocationValue("");
         setLocationPlaceId("");
         setLocationLat("");
@@ -123,7 +188,7 @@ export function EventForm({
         </div>
       )}
       <div className="space-y-2">
-        <Label htmlFor="title">Título do evento</Label>
+        <Label htmlFor="title">Título</Label>
         <Input
           id="title"
           value={title}
@@ -138,123 +203,111 @@ export function EventForm({
           id="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          rows={4}
+          rows={3}
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="startsAt">Início</Label>
+          <Label htmlFor="date">Data</Label>
           <Input
-            id="startsAt"
-            type="datetime-local"
-            value={startsAt}
-            onChange={(event) => setStartsAt(event.target.value)}
+            id="date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="endsAt">Fim</Label>
+          <Label htmlFor="time">
+            Hora{" "}
+            <span className="text-muted-foreground font-normal">
+              (opcional)
+            </span>
+          </Label>
           <Input
-            id="endsAt"
-            type="datetime-local"
-            value={endsAt}
-            onChange={(event) => setEndsAt(event.target.value)}
+            id="time"
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
           />
         </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="timezone">Fuso horário</Label>
-        <Input
-          id="timezone"
-          value={timezone}
-          onChange={(event) => setTimezone(event.target.value)}
-          placeholder="America/Sao_Paulo"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Tipo de local</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={locationType === "remote" ? "default" : "outline"}
-            onClick={() => setLocationType("remote")}
-          >
-            Remoto
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={locationType === "physical" ? "default" : "outline"}
-            onClick={() => setLocationType("physical")}
-          >
-            Presencial
-          </Button>
+        <div className="space-y-2">
+          <Label>Fuso horário</Label>
+          <Select value={timezone} onValueChange={setTimezone}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIMEZONES.map((tz) => (
+                <SelectItem key={tz.value} value={tz.value}>
+                  {tz.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        {locationType === "remote" ? (
-          <p className="text-xs text-muted-foreground">
-            Se tiver um link de evento virtual, você pode colar abaixo.
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Informe o endereço completo. O mapa será exibido após a seleção.
-          </p>
-        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="locationValue">Local</Label>
-        <Input
-          id="locationValue"
-          value={locationValue}
-          onChange={(event) => setLocationValue(event.target.value)}
-          placeholder={
-            locationType === "remote"
-              ? "https://meet.google.com/"
-              : "Rua Exemplo, 123 - São Paulo"
-          }
-          required
-        />
+        <div className="flex gap-2">
+          <Tabs
+            value={locationType}
+            onValueChange={(v) => setLocationType(v as "remote" | "physical")}
+            className="shrink-0"
+          >
+            <TabsList>
+              <TabsTrigger value="remote">Remoto</TabsTrigger>
+              <TabsTrigger value="physical">Presencial</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Input
+            id="locationValue"
+            value={locationValue}
+            onChange={(event) => setLocationValue(event.target.value)}
+            placeholder={
+              locationType === "remote"
+                ? "Link da reunião (Zoom, Meet, etc.)"
+                : "Rua Exemplo, 123 - São Paulo"
+            }
+            required
+          />
+        </div>
       </div>
       {locationType === "physical" && (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Selecione o endereço usando o buscador do Google Maps.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="locationPlaceId">Place ID</Label>
-              <Input
-                id="locationPlaceId"
-                value={locationPlaceId}
-                onChange={(event) => setLocationPlaceId(event.target.value)}
-                placeholder="ChIJ..."
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="locationLat">Latitude</Label>
-              <Input
-                id="locationLat"
-                value={locationLat}
-                onChange={(event) => setLocationLat(event.target.value)}
-                placeholder="-23.55"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="locationLng">Longitude</Label>
-              <Input
-                id="locationLng"
-                value={locationLng}
-                onChange={(event) => setLocationLng(event.target.value)}
-                placeholder="-46.63"
-                required
-              />
-            </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="locationPlaceId">Place ID</Label>
+            <Input
+              id="locationPlaceId"
+              value={locationPlaceId}
+              onChange={(event) => setLocationPlaceId(event.target.value)}
+              placeholder="ChIJ..."
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="locationLat">Latitude</Label>
+            <Input
+              id="locationLat"
+              value={locationLat}
+              onChange={(event) => setLocationLat(event.target.value)}
+              placeholder="-23.55"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="locationLng">Longitude</Label>
+            <Input
+              id="locationLng"
+              value={locationLng}
+              onChange={(event) => setLocationLng(event.target.value)}
+              placeholder="-46.63"
+              required
+            />
           </div>
         </div>
       )}
-      <Button type="submit" disabled={isSubmitting} className="gap-2">
+      <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
         {isSubmitting
           ? mode === "create"
             ? "Criando..."

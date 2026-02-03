@@ -63,6 +63,10 @@ export async function POST(request: Request) {
         await handleAccountUpdated(event.data.object as Stripe.Account);
         break;
 
+      case "account.application.deauthorized":
+        await handleAccountDeauthorized(event.account as string);
+        break;
+
       default:
         // Unhandled event type
         console.log(`Unhandled event type: ${event.type}`);
@@ -241,12 +245,14 @@ async function handleAccountUpdated(account: Stripe.Account) {
 
   let status: "active" | "restricted" | "disabled" | "onboarding_incomplete" =
     "onboarding_incomplete";
-  if (account.charges_enabled && account.details_submitted) {
+  if (account.charges_enabled) {
     status = "active";
   } else if (account.requirements?.disabled_reason) {
     status = account.requirements.disabled_reason.includes("rejected")
       ? "disabled"
       : "restricted";
+  } else if (account.details_submitted) {
+    status = "onboarding_incomplete";
   }
 
   await prisma.user.update({
@@ -259,4 +265,33 @@ async function handleAccountUpdated(account: Stripe.Account) {
   });
 
   console.log(`Connect account ${account.id} updated: ${status}`);
+}
+
+/**
+ * Handle account.application.deauthorized - clean up Connect fields.
+ */
+async function handleAccountDeauthorized(accountId: string) {
+  if (!accountId) return;
+
+  const user = await prisma.user.findUnique({
+    where: { stripeConnectAccountId: accountId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    console.log(`No user found for deauthorized account ${accountId}`);
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      stripeConnectAccountId: null,
+      stripeConnectStatus: "not_started",
+      stripeConnectChargesEnabled: false,
+      stripeConnectPayoutsEnabled: false,
+    },
+  });
+
+  console.log(`Connect account ${accountId} deauthorized, user reset`);
 }

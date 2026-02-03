@@ -242,7 +242,6 @@ export default async function ClubDetailPage({ params }: PageProps) {
           title: event.title,
           description: event.description,
           startsAt: event.startsAt,
-          endsAt: event.endsAt ?? null,
           timezone: event.timezone,
           locationType: event.locationType,
           locationValue: event.locationValue,

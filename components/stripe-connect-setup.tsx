@@ -14,6 +14,7 @@ type ConnectStatus =
   | "disabled";
 
 interface StripeConnectSetupProps {
+  clubId: string;
   status: ConnectStatus;
 }
 
@@ -53,7 +54,7 @@ const statusConfig: Record<
   },
 };
 
-export function StripeConnectSetup({ status }: StripeConnectSetupProps) {
+export function StripeConnectSetup({ clubId, status }: StripeConnectSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +69,7 @@ export function StripeConnectSetup({ status }: StripeConnectSetupProps) {
       const res = await fetch("/api/stripe/connect/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubId }),
       });
 
       const data = await res.json();

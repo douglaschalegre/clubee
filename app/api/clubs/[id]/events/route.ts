@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { createEventSchema } from "@/lib/validations/event";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import { naiveDateTimeToUTC } from "@/lib/timezone";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -59,7 +60,6 @@ export async function GET(_request: Request, context: RouteContext) {
       id: true,
       title: true,
       startsAt: true,
-      endsAt: true,
       timezone: true,
       ...(isMember || isOrganizer
         ? {
@@ -136,8 +136,7 @@ export async function POST(request: Request, context: RouteContext) {
         clubId,
         title: data.title,
         description: data.description,
-        startsAt: new Date(data.startsAt),
-        endsAt: data.endsAt ? new Date(data.endsAt) : null,
+        startsAt: naiveDateTimeToUTC(data.startsAt, data.timezone),
         timezone: data.timezone,
         locationType: data.locationType,
         locationValue: data.locationValue,

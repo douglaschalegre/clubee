@@ -4,7 +4,6 @@ const baseEventSchema = z.object({
   title: z.string().min(1, "Título obrigatório").max(120, "Título muito longo"),
   description: z.string().max(2000, "Descrição muito longa").optional(),
   startsAt: z.string().min(1, "Data de início obrigatória"),
-  endsAt: z.string().optional(),
   timezone: z.string().min(1, "Fuso horário obrigatório"),
   locationType: z.enum(["remote", "physical"]),
   locationValue: z.string().min(1, "Localização obrigatória"),

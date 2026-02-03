@@ -2,20 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { EventDeleteButton } from "@/components/event-delete-button";
 import { EventForm } from "@/components/event-form";
 import { EventMapPreview } from "@/components/event-map-preview";
 import { EventRsvpButtons } from "@/components/event-rsvp-buttons";
-import { CalendarDays, Clock, MapPin, Plus, Video, X } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Plus, Video } from "lucide-react";
 
 type EventSummary = {
   id: string;
   title: string;
   description?: string | null;
   startsAt: Date | string;
-  endsAt?: Date | string | null;
   timezone: string;
   locationType?: "remote" | "physical" | null;
   locationValue?: string | null;
@@ -42,24 +49,33 @@ export function ClubEventsSection({
   isLoggedIn,
 }: ClubEventsSectionProps) {
   const router = useRouter();
-  const [showForm, setShowForm] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const formatter = new Intl.DateTimeFormat("pt-BR", {
-    day: "numeric",
-    month: "short",
-  });
+  function formatDate(date: Date, tz: string) {
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "numeric",
+      month: "short",
+      timeZone: tz,
+    }).format(date);
+  }
 
-  const weekdayFormatter = new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-  });
+  function formatWeekday(date: Date, tz: string) {
+    return new Intl.DateTimeFormat("pt-BR", {
+      weekday: "long",
+      timeZone: tz,
+    }).format(date);
+  }
 
-  const timeFormatter = new Intl.DateTimeFormat("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  function formatTime(date: Date, tz: string) {
+    return new Intl.DateTimeFormat("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: tz,
+    }).format(date);
+  }
 
   function handleSaved() {
-    setShowForm(false);
+    setDialogOpen(false);
     router.refresh();
   }
 
@@ -90,23 +106,23 @@ export function ClubEventsSection({
 
           <div className="flex flex-wrap gap-2">
             {isOrganizer && (
-              <Button
-                type="button"
-                className="gap-2"
-                onClick={() => setShowForm((value) => !value)}
-              >
-                {showForm ? (
-                  <>
-                    <X className="h-4 w-4" />
-                    Fechar
-                  </>
-                ) : (
-                  <>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
                     <Plus className="h-4 w-4" />
                     Criar evento
-                  </>
-                )}
-              </Button>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Criar evento</DialogTitle>
+                    <DialogDescription>
+                      Convide os membros para encontros presenciais e online.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <EventForm clubId={clubId} mode="create" onSaved={handleSaved} />
+                </DialogContent>
+              </Dialog>
             )}
             {!isLoggedIn && (
               <Button asChild variant="outline" className="gap-2">
@@ -115,20 +131,6 @@ export function ClubEventsSection({
             )}
           </div>
         </div>
-
-        {isOrganizer && showForm && (
-          <Card className="border border-border/60 bg-background/80">
-            <CardHeader className="border-b">
-              <CardTitle className="text-lg">Criar evento</CardTitle>
-              <CardDescription>
-                Convide os membros para encontros presenciais e online.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <EventForm clubId={clubId} mode="create" onSaved={handleSaved} />
-            </CardContent>
-          </Card>
-        )}
 
         {events.length === 0 ? (
           <Card className="border border-border/60 bg-background/80">
@@ -142,10 +144,10 @@ export function ClubEventsSection({
             <div className="space-y-6">
               {events.map((event) => {
                 const startDate = new Date(event.startsAt);
-                const endDate = event.endsAt ? new Date(event.endsAt) : null;
-                const dateLabel = formatter.format(startDate);
-                const weekdayLabel = weekdayFormatter.format(startDate);
-                const timeLabel = `${timeFormatter.format(startDate)}${endDate ? ` – ${timeFormatter.format(endDate)}` : ""}`;
+                const dateLabel = formatDate(startDate, event.timezone);
+                const weekdayLabel = formatWeekday(startDate, event.timezone);
+                const timeLabel = formatTime(startDate, event.timezone);
+                const hasTime = timeLabel !== "00:00";
 
                 return (
                   <div key={event.id} className="relative pl-14">
@@ -169,7 +171,7 @@ export function ClubEventsSection({
                             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                               <span className="inline-flex items-center gap-1.5">
                                 <Clock className="h-4 w-4" />
-                                {timeLabel}
+                                {hasTime ? timeLabel : "Dia inteiro"}
                               </span>
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2 py-0.5 text-xs">
                                 {event.timezone}

@@ -12,17 +12,27 @@ import {
 /**
  * POST /api/stripe/connect/onboard
  * Start or continue Stripe Connect onboarding for the current user.
+ * Body: { clubId?: string }
  */
-export async function POST() {
+export async function POST(request: Request) {
   const authResult = await requireAuth();
   if (isErrorResponse(authResult)) {
     return authResult;
   }
   const { user } = authResult;
 
+  let clubId: string | undefined;
+  try {
+    const body = await request.json();
+    clubId = body.clubId;
+  } catch {
+    // No body is fine
+  }
+
   const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
-  const refreshUrl = `${baseUrl}/api/stripe/connect/refresh`;
-  const returnUrl = `${baseUrl}/api/stripe/connect/return`;
+  const callbackParam = clubId ? `?clubId=${clubId}` : "";
+  const refreshUrl = `${baseUrl}/api/stripe/connect/refresh${callbackParam}`;
+  const returnUrl = `${baseUrl}/api/stripe/connect/return${callbackParam}`;
 
   try {
     let accountId = user.stripeConnectAccountId;

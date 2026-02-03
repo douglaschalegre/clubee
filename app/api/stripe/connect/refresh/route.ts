@@ -4,7 +4,14 @@ import { NextResponse } from "next/server";
  * GET /api/stripe/connect/refresh
  * Stripe redirects here if the account link expired.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
-  return NextResponse.redirect(`${baseUrl}/my-clubs?connect=refresh`);
+  const { searchParams } = new URL(request.url);
+  const clubId = searchParams.get("clubId");
+
+  const redirectUrl = clubId
+    ? `${baseUrl}/clubs/${clubId}/settings?connect=refresh`
+    : `${baseUrl}/my-clubs?connect=refresh`;
+
+  return NextResponse.redirect(redirectUrl);
 }
