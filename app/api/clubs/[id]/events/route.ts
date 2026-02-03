@@ -8,20 +8,6 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-function validateLocation(data: {
-  locationType: "remote" | "physical";
-  locationPlaceId?: string | null;
-  locationLat?: number | null;
-  locationLng?: number | null;
-}) {
-  if (data.locationType === "physical") {
-    if (!data.locationPlaceId || data.locationLat == null || data.locationLng == null) {
-      return "Localização física inválida";
-    }
-  }
-  return null;
-}
-
 export async function GET(_request: Request, context: RouteContext) {
   const { id: clubId } = await context.params;
   const session = await auth0.getSession();
@@ -66,9 +52,6 @@ export async function GET(_request: Request, context: RouteContext) {
             description: true,
             locationType: true,
             locationValue: true,
-            locationPlaceId: true,
-            locationLat: true,
-            locationLng: true,
             _count: { select: { rsvps: true } },
           }
         : {}),
@@ -125,10 +108,6 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const data = validation.data;
-  const locationError = validateLocation(data);
-  if (locationError) {
-    return jsonError(locationError, 400);
-  }
 
   try {
     const event = await prisma.event.create({
@@ -140,9 +119,6 @@ export async function POST(request: Request, context: RouteContext) {
         timezone: data.timezone,
         locationType: data.locationType,
         locationValue: data.locationValue,
-        locationPlaceId: data.locationPlaceId,
-        locationLat: data.locationLat,
-        locationLng: data.locationLng,
       },
     });
 

@@ -7,9 +7,6 @@ const baseEventSchema = z.object({
   timezone: z.string().min(1, "Fuso horário obrigatório"),
   locationType: z.enum(["remote", "physical"]),
   locationValue: z.string().min(1, "Localização obrigatória"),
-  locationPlaceId: z.string().optional(),
-  locationLat: z.number().optional(),
-  locationLng: z.number().optional(),
 });
 
 export const createEventSchema = baseEventSchema;

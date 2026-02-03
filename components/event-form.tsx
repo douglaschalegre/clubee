@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LocationAutocomplete } from "@/components/location-autocomplete";
+import { EventMapPreview } from "@/components/event-map-preview";
 
 const TIMEZONES = [
   { value: "America/Sao_Paulo", label: "Brasília (GMT-3)" },
@@ -42,9 +44,6 @@ interface EventFormProps {
     timezone?: string;
     locationType?: "remote" | "physical";
     locationValue?: string;
-    locationPlaceId?: string | null;
-    locationLat?: number | null;
-    locationLng?: number | null;
   };
   onSaved?: () => void;
 }
@@ -97,17 +96,10 @@ export function EventForm({
   const [locationValue, setLocationValue] = useState(
     initialData?.locationValue ?? "",
   );
-  const [locationPlaceId, setLocationPlaceId] = useState(
-    initialData?.locationPlaceId ?? "",
-  );
-  const [locationLat, setLocationLat] = useState<string>(
-    initialData?.locationLat != null ? String(initialData.locationLat) : "",
-  );
-  const [locationLng, setLocationLng] = useState<string>(
-    initialData?.locationLng != null ? String(initialData.locationLng) : "",
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const mapApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -130,9 +122,6 @@ export function EventForm({
         timezone,
         locationType,
         locationValue,
-        locationPlaceId: locationPlaceId || undefined,
-        locationLat: locationLat ? Number(locationLat) : undefined,
-        locationLng: locationLng ? Number(locationLng) : undefined,
       };
 
       const res = await fetch(
@@ -169,9 +158,6 @@ export function EventForm({
         setDate("");
         setTime("");
         setLocationValue("");
-        setLocationPlaceId("");
-        setLocationLat("");
-        setLocationLng("");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado");
@@ -197,6 +183,49 @@ export function EventForm({
           required
         />
       </div>
+      <div className="space-y-2">
+        <Label>Local</Label>
+        <div className="space-y-3">
+          <Tabs
+            value={locationType}
+            onValueChange={(v) => {
+              setLocationType(v as "remote" | "physical");
+              setLocationValue("");
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="remote">Remoto</TabsTrigger>
+              <TabsTrigger value="physical">Presencial</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {locationType === "remote" ? (
+            <Input
+              id="locationValue"
+              value={locationValue}
+              onChange={(event) => setLocationValue(event.target.value)}
+              placeholder="Link da reunião (Zoom, Meet, etc.)"
+              required
+            />
+          ) : mapApiKey ? (
+            <LocationAutocomplete
+              value={locationValue}
+              onChange={setLocationValue}
+              apiKey={mapApiKey}
+            />
+          ) : (
+            <Input
+              id="locationValue"
+              value={locationValue}
+              onChange={(event) => setLocationValue(event.target.value)}
+              placeholder="Rua Exemplo, 123 - São Paulo"
+              required
+            />
+          )}
+        </div>
+      </div>
+      {locationType === "physical" && locationValue && (
+        <EventMapPreview apiKey={mapApiKey} address={locationValue} />
+      )}
       <div className="space-y-2">
         <Label htmlFor="description">Descrição</Label>
         <Textarea
@@ -243,66 +272,6 @@ export function EventForm({
           </Select>
         </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="locationValue">Local</Label>
-        <div className="flex gap-2">
-          <Tabs
-            value={locationType}
-            onValueChange={(v) => setLocationType(v as "remote" | "physical")}
-            className="shrink-0"
-          >
-            <TabsList>
-              <TabsTrigger value="remote">Remoto</TabsTrigger>
-              <TabsTrigger value="physical">Presencial</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Input
-            id="locationValue"
-            value={locationValue}
-            onChange={(event) => setLocationValue(event.target.value)}
-            placeholder={
-              locationType === "remote"
-                ? "Link da reunião (Zoom, Meet, etc.)"
-                : "Rua Exemplo, 123 - São Paulo"
-            }
-            required
-          />
-        </div>
-      </div>
-      {locationType === "physical" && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="locationPlaceId">Place ID</Label>
-            <Input
-              id="locationPlaceId"
-              value={locationPlaceId}
-              onChange={(event) => setLocationPlaceId(event.target.value)}
-              placeholder="ChIJ..."
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="locationLat">Latitude</Label>
-            <Input
-              id="locationLat"
-              value={locationLat}
-              onChange={(event) => setLocationLat(event.target.value)}
-              placeholder="-23.55"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="locationLng">Longitude</Label>
-            <Input
-              id="locationLng"
-              value={locationLng}
-              onChange={(event) => setLocationLng(event.target.value)}
-              placeholder="-46.63"
-              required
-            />
-          </div>
-        </div>
-      )}
       <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
         {isSubmitting
           ? mode === "create"

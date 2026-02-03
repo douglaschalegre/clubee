@@ -245,7 +245,6 @@ export default async function ClubDetailPage({ params }: PageProps) {
           timezone: event.timezone,
           locationType: event.locationType,
           locationValue: event.locationValue,
-          locationPlaceId: event.locationPlaceId,
           rsvpCount: event._count.rsvps,
           rsvpStatus: event.rsvps?.[0]?.status ?? null,
         }))}

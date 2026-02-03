@@ -8,20 +8,6 @@ interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
 }
 
-function validateLocation(data: {
-  locationType?: "remote" | "physical";
-  locationPlaceId?: string | null;
-  locationLat?: number | null;
-  locationLng?: number | null;
-}) {
-  if (data.locationType === "physical") {
-    if (!data.locationPlaceId || data.locationLat == null || data.locationLng == null) {
-      return "Localização física inválida";
-    }
-  }
-  return null;
-}
-
 export async function GET(_request: Request, context: RouteContext) {
   const { id: clubId, eventId } = await context.params;
   const session = await auth0.getSession();
@@ -119,10 +105,6 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const data = validation.data;
-  const locationError = validateLocation(data);
-  if (locationError) {
-    return jsonError(locationError, 400);
-  }
 
   try {
     // If startsAt is being updated, resolve the timezone for conversion
@@ -151,9 +133,6 @@ export async function PATCH(request: Request, context: RouteContext) {
         ...(data.timezone !== undefined && { timezone: data.timezone }),
         ...(data.locationType !== undefined && { locationType: data.locationType }),
         ...(data.locationValue !== undefined && { locationValue: data.locationValue }),
-        ...(data.locationPlaceId !== undefined && { locationPlaceId: data.locationPlaceId }),
-        ...(data.locationLat !== undefined && { locationLat: data.locationLat }),
-        ...(data.locationLng !== undefined && { locationLng: data.locationLng }),
       },
     });
 
