@@ -18,7 +18,7 @@ import {
   EventDetailDrawer,
   type DrawerEvent,
 } from "@/components/event-detail-drawer";
-import { CalendarDays, Clock, MapPin, Plus, Video } from "lucide-react";
+import { CalendarDays, MapPin, Plus, Video } from "lucide-react";
 
 type EventCreator = {
   id: string;
@@ -152,7 +152,9 @@ export function ClubEventsSection({
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="relative">
+            <div className="absolute left-6 top-2 h-full w-px bg-border/60" />
+            <div className="space-y-6">
             {events.map((event) => {
               const startDate = new Date(event.startsAt);
               const dateLabel = formatDate(startDate, event.timezone);
@@ -165,12 +167,13 @@ export function ClubEventsSection({
                 .toUpperCase();
 
               return (
-                <button
-                  key={event.id}
-                  type="button"
-                  onClick={() => openDrawer(event)}
-                  className="w-full text-left rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
+                <div key={event.id} className="relative pl-14">
+                  <div className="absolute left-[18px] top-2 h-4 w-4 rounded-full border-2 border-primary bg-background shadow" />
+                  <button
+                    type="button"
+                    onClick={() => openDrawer(event)}
+                    className="w-full text-left rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                   <h3
                     className="text-lg font-semibold"
                     style={{ fontFamily: "var(--font-display)" }}
@@ -197,11 +200,11 @@ export function ClubEventsSection({
                       </div>
                     )}
 
-                    {/* Time */}
+                    {/* Date & time */}
                     <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4 shrink-0" />
+                      <CalendarDays className="h-4 w-4 shrink-0" />
                       <span>
-                        {timeLabel} &middot; {dateLabel}
+                        {dateLabel} &middot; {timeLabel}
                       </span>
                     </div>
 
@@ -217,9 +220,11 @@ export function ClubEventsSection({
                       </div>
                     )}
                   </div>
-                </button>
+                  </button>
+                </div>
               );
             })}
+            </div>
           </div>
         )}
       </div>
