@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,9 +57,22 @@ export function ClubEventsSection({
   isLoggedIn,
 }: ClubEventsSectionProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<DrawerEvent | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Auto-open drawer when event parameter is present in URL
+  useEffect(() => {
+    const eventId = searchParams.get("event");
+    if (eventId) {
+      const matchingEvent = events.find((e) => e.id === eventId);
+      if (matchingEvent) {
+        openDrawer(matchingEvent);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   function formatDate(date: Date, tz: string) {
     return new Intl.DateTimeFormat("pt-BR", {
@@ -85,6 +98,26 @@ export function ClubEventsSection({
   function openDrawer(event: EventSummary) {
     setSelectedEvent(event);
     setDrawerOpen(true);
+
+    // Update URL without page reload
+    const params = new URLSearchParams(window.location.search);
+    params.set("event", event.id);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
+
+  function handleDrawerClose(open: boolean) {
+    setDrawerOpen(open);
+    if (!open) {
+      setSelectedEvent(null);
+
+      // Remove event parameter from URL
+      const params = new URLSearchParams(window.location.search);
+      params.delete("event");
+      const newUrl = params.toString()
+        ? `?${params.toString()}`
+        : window.location.pathname;
+      router.replace(newUrl, { scroll: false });
+    }
   }
 
   return (
@@ -232,7 +265,7 @@ export function ClubEventsSection({
       {selectedEvent && (
         <EventDetailDrawer
           open={drawerOpen}
-          onOpenChange={setDrawerOpen}
+          onOpenChange={handleDrawerClose}
           event={selectedEvent}
           clubId={clubId}
           isOrganizer={isOrganizer}
