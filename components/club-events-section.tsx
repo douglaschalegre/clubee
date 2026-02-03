@@ -147,7 +147,6 @@ export function ClubEventsSection({
                 const dateLabel = formatDate(startDate, event.timezone);
                 const weekdayLabel = formatWeekday(startDate, event.timezone);
                 const timeLabel = formatTime(startDate, event.timezone);
-                const hasTime = timeLabel !== "00:00";
 
                 return (
                   <div key={event.id} className="relative pl-14">
@@ -171,7 +170,7 @@ export function ClubEventsSection({
                             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                               <span className="inline-flex items-center gap-1.5">
                                 <Clock className="h-4 w-4" />
-                                {hasTime ? timeLabel : "Dia inteiro"}
+                                {timeLabel}
                               </span>
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2 py-0.5 text-xs">
                                 {event.timezone}

@@ -114,13 +114,13 @@ export function EventForm({
     setIsSubmitting(true);
     setError(null);
 
-    if (!date) {
-      setError("Data é obrigatória");
+    if (!date || !time) {
+      setError("Data e hora são obrigatórios");
       setIsSubmitting(false);
       return;
     }
 
-    const startsAt = `${date}T${time || "00:00"}`;
+    const startsAt = `${date}T${time}`;
 
     try {
       const payload = {
@@ -218,17 +218,13 @@ export function EventForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="time">
-            Hora{" "}
-            <span className="text-muted-foreground font-normal">
-              (opcional)
-            </span>
-          </Label>
+          <Label htmlFor="time">Hora</Label>
           <Input
             id="time"
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
+            required
           />
         </div>
         <div className="space-y-2">
