@@ -1,21 +1,21 @@
 interface EventMapPreviewProps {
   apiKey?: string | null;
-  placeId?: string | null;
+  address?: string | null;
 }
 
-export function EventMapPreview({ apiKey, placeId }: EventMapPreviewProps) {
-  if (!apiKey || !placeId) {
+export function EventMapPreview({ apiKey, address }: EventMapPreviewProps) {
+  if (!apiKey || !address) {
     return null;
   }
 
-  const mapSrc = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${placeId}`;
+  const mapSrc = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(address)}`;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
       <iframe
         title="Mapa do evento"
         src={mapSrc}
-        className="h-64 w-full"
+        className="h-40 w-full"
         loading="lazy"
         allowFullScreen
         referrerPolicy="no-referrer-when-downgrade"

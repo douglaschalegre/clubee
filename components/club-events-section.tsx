@@ -26,7 +26,6 @@ type EventSummary = {
   timezone: string;
   locationType?: "remote" | "physical" | null;
   locationValue?: string | null;
-  locationPlaceId?: string | null;
   rsvpCount: number;
   rsvpStatus?: "going" | "not_going" | null;
 };
@@ -99,7 +98,8 @@ export function ClubEventsSection({
                 Eventos
               </h2>
               <p className="text-sm text-muted-foreground">
-                {events.length} {events.length === 1 ? "evento" : "eventos"} programados
+                {events.length} {events.length === 1 ? "evento" : "eventos"}{" "}
+                programados
               </p>
             </div>
           </div>
@@ -120,7 +120,11 @@ export function ClubEventsSection({
                       Convide os membros para encontros presenciais e online.
                     </DialogDescription>
                   </DialogHeader>
-                  <EventForm clubId={clubId} mode="create" onSaved={handleSaved} />
+                  <EventForm
+                    clubId={clubId}
+                    mode="create"
+                    onSaved={handleSaved}
+                  />
                 </DialogContent>
               </Dialog>
             )}
@@ -158,13 +162,19 @@ export function ClubEventsSection({
                             <span className="text-sm uppercase tracking-wide text-muted-foreground">
                               {dateLabel}
                             </span>
-                            <span className="text-sm font-semibold capitalize" style={{ fontFamily: "var(--font-display)" }}>
+                            <span
+                              className="text-sm font-semibold capitalize"
+                              style={{ fontFamily: "var(--font-display)" }}
+                            >
                               {weekdayLabel}
                             </span>
                           </div>
                           <div className="h-10 w-px bg-border/60" />
                           <div>
-                            <h3 className="text-lg font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+                            <h3
+                              className="text-lg font-semibold"
+                              style={{ fontFamily: "var(--font-display)" }}
+                            >
                               {event.title}
                             </h3>
                             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -180,9 +190,12 @@ export function ClubEventsSection({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <span className="rounded-full border border-border/60 px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                              {event.rsvpCount} {event.rsvpCount === 1 ? "confirmação" : "confirmações"}
-                            </span>
+                          <span className="rounded-full border border-border/60 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                            {event.rsvpCount}{" "}
+                            {event.rsvpCount === 1
+                              ? "confirmação"
+                              : "confirmações"}
+                          </span>
                           {isOrganizer && (
                             <EventDeleteButton
                               clubId={clubId}
@@ -196,16 +209,18 @@ export function ClubEventsSection({
                       {canViewEventDetails ? (
                         <div className="grid gap-3 text-sm text-muted-foreground">
                           {event.description && (
-                            <p className="leading-relaxed">{event.description}</p>
+                            <p className="leading-relaxed">
+                              {event.description}
+                            </p>
                           )}
                           {event.locationType && event.locationValue && (
                             <div className="inline-flex items-center gap-2">
-                              {event.locationType === "remote" ? (
-                                <Video className="h-4 w-4" />
-                              ) : (
-                                <MapPin className="h-4 w-4" />
+                              {event.locationType === "remote" && (
+                                <>
+                                  <Video className="h-4 w-4" />
+                                  <span>{event.locationValue}</span>
+                                </>
                               )}
-                              <span>{event.locationValue}</span>
                             </div>
                           )}
                         </div>
@@ -215,9 +230,13 @@ export function ClubEventsSection({
                         </p>
                       )}
 
-                      {canViewEventDetails && event.locationType === "physical" && (
-                        <EventMapPreview apiKey={mapApiKey} placeId={event.locationPlaceId} />
-                      )}
+                      {canViewEventDetails &&
+                        event.locationType === "physical" && (
+                          <EventMapPreview
+                            apiKey={mapApiKey}
+                            address={event.locationValue}
+                          />
+                        )}
 
                       {canViewEventDetails && !isOrganizer && (
                         <EventRsvpButtons

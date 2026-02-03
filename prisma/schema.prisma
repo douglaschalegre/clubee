@@ -107,9 +107,6 @@ model Event {
   timezone        String
   locationType    EventLocationType @map("location_type")
   locationValue   String            @map("location_value")
-  locationPlaceId String?           @map("location_place_id")
-  locationLat     Float?            @map("location_lat")
-  locationLng     Float?            @map("location_lng")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
