@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import {
+  RESERVED_RSVP_STATUSES,
+  isReservedStatus,
+} from "@/lib/event-capacity";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -30,6 +34,7 @@ export async function POST(request: Request, context: RouteContext) {
       id: true,
       priceCents: true,
       requiresApproval: true,
+      maxCapacity: true,
       club: {
         select: {
           membershipPriceCents: true,
@@ -48,6 +53,7 @@ export async function POST(request: Request, context: RouteContext) {
   const isOrganizer = event.club.organizerId === dbUser.id;
   const isPaidClub =
     event.club.membershipPriceCents && event.club.membershipPriceCents > 0;
+  const maxCapacity = event.maxCapacity;
 
   // Organizers can't RSVP to their own events
   if (isOrganizer) {
@@ -101,61 +107,65 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   try {
-    if (needsApproval && isPaidEvent) {
-      // Approval + Payment required
-      const rsvp = await prisma.eventRsvp.upsert({
-        where: { eventId_userId: { eventId, userId: dbUser.id } },
-        create: {
-          eventId,
-          userId: dbUser.id,
-          status: "pending_approval",
-        },
-        update: {
-          status: "pending_approval",
-        },
-      });
-      return jsonSuccess({
-        rsvp,
-        requiresApproval: true,
-        requiresPayment: true,
-      });
-    } else if (needsApproval) {
-      // Approval only (free event)
-      const rsvp = await prisma.eventRsvp.upsert({
-        where: { eventId_userId: { eventId, userId: dbUser.id } },
-        create: {
-          eventId,
-          userId: dbUser.id,
-          status: "pending_approval",
-        },
-        update: {
-          status: "pending_approval",
-        },
-      });
-      return jsonSuccess({
-        rsvp,
-        requiresApproval: true,
-      });
-    } else if (isPaidEvent) {
-      // Payment only (no approval)
-      const rsvp = await prisma.eventRsvp.upsert({
-        where: { eventId_userId: { eventId, userId: dbUser.id } },
-        create: {
-          eventId,
-          userId: dbUser.id,
-          status: "pending_payment",
-        },
-        update: {
-          status: "pending_payment",
-        },
-      });
-      return jsonSuccess({
-        rsvp,
-        requiresPayment: true,
-      });
-    } else {
-      // Free event, no approval (instant confirmation)
-      const rsvp = await prisma.eventRsvp.upsert({
+    type RsvpClient = Pick<typeof prisma, "eventRsvp">;
+
+    const upsertGoing = async (client: RsvpClient) => {
+      if (needsApproval && isPaidEvent) {
+        const rsvp = await client.eventRsvp.upsert({
+          where: { eventId_userId: { eventId, userId: dbUser.id } },
+          create: {
+            eventId,
+            userId: dbUser.id,
+            status: "pending_approval",
+          },
+          update: {
+            status: "pending_approval",
+          },
+        });
+        return {
+          rsvp,
+          requiresApproval: true,
+          requiresPayment: true,
+        };
+      }
+
+      if (needsApproval) {
+        const rsvp = await client.eventRsvp.upsert({
+          where: { eventId_userId: { eventId, userId: dbUser.id } },
+          create: {
+            eventId,
+            userId: dbUser.id,
+            status: "pending_approval",
+          },
+          update: {
+            status: "pending_approval",
+          },
+        });
+        return {
+          rsvp,
+          requiresApproval: true,
+        };
+      }
+
+      if (isPaidEvent) {
+        const rsvp = await client.eventRsvp.upsert({
+          where: { eventId_userId: { eventId, userId: dbUser.id } },
+          create: {
+            eventId,
+            userId: dbUser.id,
+            status: "pending_payment",
+          },
+          update: {
+            status: "pending_payment",
+          },
+        });
+        return {
+          rsvp,
+          requiresPayment: true,
+        };
+      }
+
+      const rsvp = await client.eventRsvp.upsert({
         where: { eventId_userId: { eventId, userId: dbUser.id } },
         create: {
           eventId,
@@ -166,8 +176,45 @@ export async function POST(request: Request, context: RouteContext) {
           status: "going",
         },
       });
-      return jsonSuccess({ rsvp });
+      return { rsvp };
+    };
+
+    const shouldCheckCapacity =
+      maxCapacity !== null && maxCapacity !== undefined;
+
+    if (shouldCheckCapacity) {
+      const result = await prisma.$transaction(async (tx) => {
+        const existing = await tx.eventRsvp.findUnique({
+          where: { eventId_userId: { eventId, userId: dbUser.id } },
+          select: { status: true },
+        });
+        const hasReserved = isReservedStatus(existing?.status ?? null);
+
+        if (!hasReserved) {
+          const reservedCount = await tx.eventRsvp.count({
+            where: {
+              eventId,
+              status: { in: RESERVED_RSVP_STATUSES },
+            },
+          });
+
+          if (reservedCount >= maxCapacity) {
+            return { error: "full" as const };
+          }
+        }
+
+        return { data: await upsertGoing(tx) };
+      });
+
+      if ("error" in result) {
+        return jsonError("Evento lotado", 409);
+      }
+
+      return jsonSuccess(result.data);
     }
+
+    const payload = await upsertGoing(prisma);
+    return jsonSuccess(payload);
   } catch (error) {
     console.error("Falha ao atualizar RSVP:", error);
     return jsonError("Falha ao atualizar RSVP", 500);

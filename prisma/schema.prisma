@@ -124,6 +124,7 @@ model Event {
 
   // Approval requirement (default false)
   requiresApproval     Boolean  @default(false) @map("requires_approval")
+  maxCapacity          Int?     @map("max_capacity")
 
   clubId String @map("club_id")
   club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)

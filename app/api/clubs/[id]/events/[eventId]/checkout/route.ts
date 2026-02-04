@@ -79,7 +79,8 @@ export async function POST(_request: Request, context: RouteContext) {
 
   if (
     rsvp.status !== "pending_payment" &&
-    rsvp.status !== "approved_pending_payment"
+    rsvp.status !== "approved_pending_payment" &&
+    rsvp.status !== "payment_failed"
   ) {
     return jsonError(
       `Não é possível pagar com status: ${rsvp.status}`,

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ import {
   EventDetailDrawer,
   type DrawerEvent,
 } from "@/components/event-detail-drawer";
-import { CalendarDays, MapPin, Plus, Video } from "lucide-react";
+import { CalendarDays, MapPin, Plus, Users, Video } from "lucide-react";
 
 type EventCreator = {
   id: string;
@@ -34,7 +35,8 @@ type EventSummary = {
   timezone: string;
   locationType?: "remote" | "physical" | null;
   locationValue?: string | null;
-  rsvpCount: number;
+  reservedCount: number;
+  maxCapacity?: number | null;
   rsvpStatus?:
     | "going"
     | "not_going"
@@ -207,6 +209,10 @@ export function ClubEventsSection({
               const startDate = new Date(event.startsAt);
               const dateLabel = formatDate(startDate, event.timezone);
               const timeLabel = formatTime(startDate, event.timezone);
+              const isFull =
+                event.maxCapacity !== null &&
+                event.maxCapacity !== undefined &&
+                event.reservedCount >= event.maxCapacity;
               const creatorInitials = event.createdBy?.name
                 ?.split(" ")
                 .map((n) => n[0])
@@ -267,6 +273,22 @@ export function ClubEventsSection({
                         <span className="truncate">{event.locationValue}</span>
                       </div>
                     )}
+
+                    {/* Capacity */}
+                    {event.maxCapacity !== null &&
+                    event.maxCapacity !== undefined ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-4 w-4 shrink-0" />
+                          <span>
+                            {event.reservedCount}/{event.maxCapacity} vagas
+                          </span>
+                        </div>
+                        {isFull && (
+                          <Badge variant="destructive">Lotado</Badge>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                   </button>
                 </div>

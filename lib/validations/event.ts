@@ -17,6 +17,12 @@ const baseEventSchema = z.object({
       "Preço mínimo é R$ 1,00 ou gratuito"
     ),
   requiresApproval: z.boolean().optional(),
+  maxCapacity: z
+    .number()
+    .int()
+    .min(1, "Capacidade deve ser no mínimo 1")
+    .nullable()
+    .optional(),
 });
 
 export const createEventSchema = baseEventSchema;

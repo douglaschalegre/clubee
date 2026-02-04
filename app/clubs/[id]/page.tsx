@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
 import { generateClubMetadata, generateEventMetadata } from "@/lib/metadata";
+import { RESERVED_RSVP_STATUSES } from "@/lib/event-capacity";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClubAvatar } from "@/components/club-avatar";
@@ -125,7 +126,6 @@ export default async function ClubDetailPage({ params }: PageProps) {
     where: { clubId: id },
     orderBy: { startsAt: "asc" },
     include: {
-      _count: { select: { rsvps: true } },
       createdBy: { select: { id: true, name: true, avatarUrl: true } },
       rsvps: dbUser?.id
         ? {
@@ -135,6 +135,22 @@ export default async function ClubDetailPage({ params }: PageProps) {
         : false,
     },
   });
+
+  const eventIds = events.map((event) => event.id);
+  const reservedCounts = eventIds.length
+    ? await prisma.eventRsvp.groupBy({
+        by: ["eventId"],
+        where: {
+          eventId: { in: eventIds },
+          status: { in: RESERVED_RSVP_STATUSES },
+        },
+        _count: { _all: true },
+      })
+    : [];
+
+  const reservedCountMap = new Map(
+    reservedCounts.map((row) => [row.eventId, row._count._all])
+  );
 
   const mapApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -323,7 +339,8 @@ export default async function ClubDetailPage({ params }: PageProps) {
           locationValue: event.locationValue,
           priceCents: event.priceCents,
           requiresApproval: event.requiresApproval,
-          rsvpCount: event._count.rsvps,
+          reservedCount: reservedCountMap.get(event.id) ?? 0,
+          maxCapacity: event.maxCapacity ?? null,
           rsvpStatus: event.rsvps?.[0]?.status ?? null,
           createdBy: event.createdBy ?? null,
         }))}

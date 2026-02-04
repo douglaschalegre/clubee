@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Link2, Share2, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { isReservedStatus } from "@/lib/event-capacity";
 import { toast } from "sonner";
 
 type RsvpStatus =
@@ -26,6 +27,8 @@ interface EventRsvpButtonsProps {
   isOrganizer?: boolean;
   priceCents?: number | null;
   requiresApproval?: boolean;
+  reservedCount?: number;
+  maxCapacity?: number | null;
 }
 
 export function EventRsvpButtons({
@@ -36,6 +39,8 @@ export function EventRsvpButtons({
   isOrganizer = false,
   priceCents,
   requiresApproval,
+  reservedCount = 0,
+  maxCapacity,
 }: EventRsvpButtonsProps) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
@@ -43,10 +48,20 @@ export function EventRsvpButtons({
   const [copied, setCopied] = useState(false);
 
   const isPaidEvent = priceCents && priceCents > 0;
+  const isPendingPayment =
+    status === "pending_payment" ||
+    status === "approved_pending_payment" ||
+    status === "payment_failed";
+  const isFull =
+    maxCapacity !== null &&
+    maxCapacity !== undefined &&
+    reservedCount >= maxCapacity;
+  const hasReserved = isReservedStatus(status);
+  const goingDisabled = isUpdating || isPendingPayment || (isFull && !hasReserved);
 
   const goingLabel = useMemo(() => {
     if (requiresApproval && isPaidEvent) {
-      return "Solicitar e pagar";
+      return "Solicitar participação";
     } else if (requiresApproval) {
       return "Solicitar participação";
     } else if (isPaidEvent) {
@@ -174,43 +189,37 @@ export function EventRsvpButtons({
     }
   }
 
-  // Show payment button for approved pending payment status
-  if (status === "approved_pending_payment") {
-    return (
-      <div className="space-y-2">
-        <Button
-          onClick={handlePayment}
-          disabled={isUpdating}
-          className="w-full"
-        >
+  return (
+    <div className="space-y-2">
+      {isPendingPayment && (
+        <Button onClick={handlePayment} disabled={isUpdating} className="w-full">
           {isUpdating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processando...
             </>
+          ) : status === "payment_failed" ? (
+            "Tentar pagamento novamente"
           ) : (
             `Pagar - ${formatCurrency(priceCents!)}`
           )}
         </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
+      )}
       <div className="flex items-center gap-2">
         {/* RSVP toggle */}
         {!isOrganizer && (
           <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
             <button
               type="button"
-              disabled={isUpdating}
+              disabled={goingDisabled}
               onClick={() => updateRsvp("going")}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all disabled:opacity-50 whitespace-nowrap",
                 status === "going" ||
                   status === "pending_payment" ||
-                  status === "pending_approval"
+                  status === "pending_approval" ||
+                  status === "approved_pending_payment" ||
+                  status === "payment_failed"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
@@ -224,7 +233,7 @@ export function EventRsvpButtons({
             </button>
             <button
               type="button"
-              disabled={isUpdating}
+              disabled={isUpdating || isPendingPayment}
               onClick={() => updateRsvp("not_going")}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all disabled:opacity-50",

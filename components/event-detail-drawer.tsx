@@ -27,6 +27,7 @@ import { EventMapPreview } from "@/components/event-map-preview";
 import { EventRsvpButtons } from "@/components/event-rsvp-buttons";
 import { CalendarDays, Clock, MapPin, Settings, Users, Video, CheckCircle, XCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
+import { isReservedStatus } from "@/lib/event-capacity";
 
 type EventCreator = {
   id: string;
@@ -42,7 +43,8 @@ export type DrawerEvent = {
   timezone: string;
   locationType?: "remote" | "physical" | null;
   locationValue?: string | null;
-  rsvpCount: number;
+  reservedCount: number;
+  maxCapacity?: number | null;
   rsvpStatus?: "going" | "not_going" | "pending_payment" | "pending_approval" | "approved_pending_payment" | "rejected" | "payment_failed" | null;
   createdBy?: EventCreator | null;
   priceCents?: number | null;
@@ -75,7 +77,7 @@ export function EventDetailDrawer({
 }: EventDetailDrawerProps) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [rsvpCount, setRsvpCount] = useState(event.rsvpCount);
+  const [reservedCount, setReservedCount] = useState(event.reservedCount);
   const [currentRsvpStatus, setCurrentRsvpStatus] = useState(
     event.rsvpStatus ?? null
   );
@@ -84,7 +86,7 @@ export function EventDetailDrawer({
   const [trackedEventId, setTrackedEventId] = useState(event.id);
   if (event.id !== trackedEventId) {
     setTrackedEventId(event.id);
-    setRsvpCount(event.rsvpCount);
+    setReservedCount(event.reservedCount);
     setCurrentRsvpStatus(event.rsvpStatus ?? null);
   }
 
@@ -126,15 +128,15 @@ export function EventDetailDrawer({
       | "payment_failed"
       | null
   ) {
-    const wasGoing = currentRsvpStatus === "going";
-    const nowGoing = status === "going";
+    const wasReserved = isReservedStatus(currentRsvpStatus);
+    const nowReserved = isReservedStatus(status);
 
     setCurrentRsvpStatus(status);
 
-    if (nowGoing && !wasGoing) {
-      setRsvpCount((c) => c + 1);
-    } else if (!nowGoing && wasGoing) {
-      setRsvpCount((c) => Math.max(0, c - 1));
+    if (nowReserved && !wasReserved) {
+      setReservedCount((c) => c + 1);
+    } else if (!nowReserved && wasReserved) {
+      setReservedCount((c) => Math.max(0, c - 1));
     }
   }
 
@@ -155,6 +157,10 @@ export function EventDetailDrawer({
     .slice(0, 2)
     .join("")
     .toUpperCase();
+  const isFull =
+    event.maxCapacity !== null &&
+    event.maxCapacity !== undefined &&
+    reservedCount >= event.maxCapacity;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -201,6 +207,7 @@ export function EventDetailDrawer({
                           locationValue: event.locationValue ?? undefined,
                           priceCents: event.priceCents,
                           requiresApproval: event.requiresApproval,
+                          maxCapacity: event.maxCapacity ?? null,
                         }}
                         onSaved={handleEdited}
                         stripeConnectActive={stripeConnectActive}
@@ -237,6 +244,14 @@ export function EventDetailDrawer({
                   Requer aprovação
                 </Badge>
               )}
+              {event.maxCapacity !== null &&
+              event.maxCapacity !== undefined ? (
+                <Badge variant="outline">
+                  <Users className="w-3 h-3 mr-1" />
+                  {reservedCount}/{event.maxCapacity} vagas
+                </Badge>
+              ) : null}
+              {isFull && <Badge variant="destructive">Lotado</Badge>}
             </div>
           </DrawerHeader>
 
@@ -248,6 +263,16 @@ export function EventDetailDrawer({
                 <AlertTitle>Aguardando aprovação</AlertTitle>
                 <AlertDescription>
                   O organizador revisará sua solicitação em breve.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {currentRsvpStatus === "pending_payment" && (
+              <Alert>
+                <Clock className="h-4 w-4" />
+                <AlertTitle>Pagamento pendente</AlertTitle>
+                <AlertDescription>
+                  Complete o pagamento para confirmar sua presença.
                 </AlertDescription>
               </Alert>
             )}
@@ -295,7 +320,10 @@ export function EventDetailDrawer({
               {/* Right: count · creator */}
               <span className="inline-flex items-center gap-1.5 text-muted-foreground/60">
                 <Users className="h-3.5 w-3.5 shrink-0" />
-                {rsvpCount}
+                {event.maxCapacity !== null &&
+                event.maxCapacity !== undefined
+                  ? `${reservedCount}/${event.maxCapacity}`
+                  : reservedCount}
                 {event.createdBy && (
                   <>
                     <span className="text-border">·</span>
@@ -326,6 +354,8 @@ export function EventDetailDrawer({
                 isOrganizer={isOrganizer}
                 priceCents={event.priceCents}
                 requiresApproval={event.requiresApproval}
+                reservedCount={reservedCount}
+                maxCapacity={event.maxCapacity}
               />
             )}
 

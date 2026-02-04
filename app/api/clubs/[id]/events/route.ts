@@ -3,6 +3,7 @@ import { auth0 } from "@/lib/auth0";
 import { createEventSchema } from "@/lib/validations/event";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 import { naiveDateTimeToUTC } from "@/lib/timezone";
+import { RESERVED_RSVP_STATUSES } from "@/lib/event-capacity";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -47,19 +48,41 @@ export async function GET(_request: Request, context: RouteContext) {
       title: true,
       startsAt: true,
       timezone: true,
+      maxCapacity: true,
       ...(isMember || isOrganizer
         ? {
             description: true,
             locationType: true,
             locationValue: true,
-            _count: { select: { rsvps: true } },
           }
         : {}),
     },
   });
 
+  const eventIds = events.map((event) => event.id);
+  const reservedCounts = eventIds.length
+    ? await prisma.eventRsvp.groupBy({
+        by: ["eventId"],
+        where: {
+          eventId: { in: eventIds },
+          status: { in: RESERVED_RSVP_STATUSES },
+        },
+        _count: { _all: true },
+      })
+    : [];
+
+  const reservedCountMap = new Map(
+    reservedCounts.map((row) => [row.eventId, row._count._all])
+  );
+
+  const eventsWithCounts = events.map((event) => ({
+    ...event,
+    reservedCount: reservedCountMap.get(event.id) ?? 0,
+    maxCapacity: event.maxCapacity ?? null,
+  }));
+
   return jsonSuccess({
-    events,
+    events: eventsWithCounts,
     canViewDetails: isMember || isOrganizer,
     canManage: isOrganizer,
   });
@@ -125,6 +148,7 @@ export async function POST(request: Request, context: RouteContext) {
         createdById: dbUser.id,
         priceCents,
         requiresApproval: data.requiresApproval ?? false,
+        maxCapacity: data.maxCapacity ?? null,
       },
     });
 

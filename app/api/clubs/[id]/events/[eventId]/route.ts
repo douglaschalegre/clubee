@@ -3,6 +3,7 @@ import { auth0 } from "@/lib/auth0";
 import { updateEventSchema } from "@/lib/validations/event";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 import { naiveDateTimeToUTC } from "@/lib/timezone";
+import { RESERVED_RSVP_STATUSES } from "@/lib/event-capacity";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -110,6 +111,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const priceCents = data.price !== undefined
     ? (data.price ? Math.round(data.price * 100) : null)
     : undefined;
+  const maxCapacity = data.maxCapacity;
 
   try {
     // If startsAt is being updated, resolve the timezone for conversion
@@ -129,6 +131,22 @@ export async function PATCH(request: Request, context: RouteContext) {
       startsAtUTC = naiveDateTimeToUTC(data.startsAt, tz);
     }
 
+    if (maxCapacity !== undefined && maxCapacity !== null) {
+      const reservedCount = await prisma.eventRsvp.count({
+        where: {
+          eventId,
+          status: { in: RESERVED_RSVP_STATUSES },
+        },
+      });
+
+      if (reservedCount > maxCapacity) {
+        return jsonError(
+          "Capacidade menor do que as reservas atuais",
+          409
+        );
+      }
+    }
+
     const event = await prisma.event.update({
       where: { id: eventId, clubId },
       data: {
@@ -140,6 +158,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         ...(data.locationValue !== undefined && { locationValue: data.locationValue }),
         ...(priceCents !== undefined && { priceCents }),
         ...(data.requiresApproval !== undefined && { requiresApproval: data.requiresApproval }),
+        ...(maxCapacity !== undefined && { maxCapacity }),
       },
     });
 

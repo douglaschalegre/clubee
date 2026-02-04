@@ -57,6 +57,7 @@ interface EventFormProps {
     locationValue?: string;
     priceCents?: number | null;
     requiresApproval?: boolean;
+    maxCapacity?: number | null;
   };
   onSaved?: () => void;
   stripeConnectActive?: boolean;
@@ -123,6 +124,9 @@ export function EventForm({
   const [requiresApproval, setRequiresApproval] = useState(
     initialData?.requiresApproval ?? false
   );
+  const [maxCapacityInput, setMaxCapacityInput] = useState(
+    initialData?.maxCapacity ? String(initialData.maxCapacity) : ""
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showStripeDialog, setShowStripeDialog] = useState(false);
@@ -145,6 +149,9 @@ export function EventForm({
       setPriceInput(initialData.priceCents ? (initialData.priceCents / 100).toFixed(2) : "");
       setIsEditingPrice(false);
       setRequiresApproval(initialData.requiresApproval ?? false);
+      setMaxCapacityInput(
+        initialData.maxCapacity ? String(initialData.maxCapacity) : ""
+      );
     }
   }, [initialData]);
 
@@ -162,6 +169,17 @@ export function EventForm({
     }
 
     const startsAt = `${date}T${time}`;
+    const trimmedCapacity = maxCapacityInput.trim();
+    let maxCapacity: number | null = null;
+    if (trimmedCapacity) {
+      const parsed = Number(trimmedCapacity);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        setValidationError("Capacidade deve ser um número inteiro a partir de 1");
+        setIsSubmitting(false);
+        return;
+      }
+      maxCapacity = parsed;
+    }
 
     try {
       const payload = {
@@ -173,6 +191,7 @@ export function EventForm({
         locationValue,
         price,
         requiresApproval,
+        maxCapacity,
       };
 
       const res = await fetch(
@@ -214,6 +233,7 @@ export function EventForm({
         setPriceInput("");
         setIsEditingPrice(false);
         setRequiresApproval(false);
+        setMaxCapacityInput("");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Algo deu errado");
@@ -402,6 +422,25 @@ export function EventForm({
                 <Pencil className="h-3 w-3" />
               </button>
             )}
+          </div>
+
+          {/* Capacity row */}
+          <div className="flex items-start justify-between gap-3 px-3 py-2.5">
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span>Capacidade</span>
+              <span className="text-xs text-muted-foreground">
+                Deixe em branco para ilimitado
+              </span>
+            </div>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="--"
+              value={maxCapacityInput}
+              onChange={(e) => setMaxCapacityInput(e.target.value)}
+              className="h-7 w-24 text-right text-sm px-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
           </div>
 
           {/* Approval row */}
