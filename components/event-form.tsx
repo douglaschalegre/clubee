@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { EventMapPreview } from "@/components/event-map-preview";
-import { Ticket, UserCheck, Pencil, CreditCard } from "lucide-react";
+import { Ticket, UserCheck, Pencil, CreditCard, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const TIMEZONES = [
@@ -127,6 +127,7 @@ export function EventForm({
   const [maxCapacityInput, setMaxCapacityInput] = useState(
     initialData?.maxCapacity ? String(initialData.maxCapacity) : ""
   );
+  const [isEditingCapacity, setIsEditingCapacity] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showStripeDialog, setShowStripeDialog] = useState(false);
@@ -152,6 +153,7 @@ export function EventForm({
       setMaxCapacityInput(
         initialData.maxCapacity ? String(initialData.maxCapacity) : ""
       );
+      setIsEditingCapacity(false);
     }
   }, [initialData]);
 
@@ -234,6 +236,7 @@ export function EventForm({
         setIsEditingPrice(false);
         setRequiresApproval(false);
         setMaxCapacityInput("");
+        setIsEditingCapacity(false);
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Algo deu errado");
@@ -425,22 +428,58 @@ export function EventForm({
           </div>
 
           {/* Capacity row */}
-          <div className="flex items-start justify-between gap-3 px-3 py-2.5">
-            <div className="flex flex-col gap-0.5 text-sm">
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+            <div className="flex items-center gap-2.5 text-sm">
+              <Users className="h-4 w-4 text-muted-foreground shrink-0" />
               <span>Capacidade</span>
-              <span className="text-xs text-muted-foreground">
-                Deixe em branco para ilimitado
-              </span>
             </div>
-            <Input
-              type="number"
-              min="1"
-              step="1"
-              placeholder="--"
-              value={maxCapacityInput}
-              onChange={(e) => setMaxCapacityInput(e.target.value)}
-              className="h-7 w-24 text-right text-sm px-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
+            {isEditingCapacity ? (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="--"
+                  value={maxCapacityInput}
+                  onChange={(e) => setMaxCapacityInput(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = maxCapacityInput.trim();
+                    if (!trimmed) {
+                      setMaxCapacityInput("");
+                    } else {
+                      const parsed = Number(trimmed);
+                      if (!Number.isInteger(parsed) || parsed < 1) {
+                        setMaxCapacityInput("");
+                      } else {
+                        setMaxCapacityInput(String(parsed));
+                      }
+                    }
+                    setIsEditingCapacity(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  autoFocus
+                  className="h-7 w-24 text-right text-sm px-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditingCapacity(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span>
+                  {maxCapacityInput
+                    ? `${Number(maxCapacityInput)} vagas`
+                    : "Ilimitado"}
+                </span>
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
           </div>
 
           {/* Approval row */}
