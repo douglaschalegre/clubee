@@ -13,6 +13,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { ArrowRight, CreditCard, Crown, Users, AlertCircle, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 type ClubSummary = {
   id: string;
@@ -65,11 +66,9 @@ export function MyClubsView({
 }: MyClubsViewProps) {
   const [view, setView] = useState<ViewMode>(initialView);
   const [isManaging, setIsManaging] = useState<string | null>(null);
-  const [manageError, setManageError] = useState<string | null>(null);
 
   async function handleManageSubscription(membershipId: string) {
     setIsManaging(membershipId);
-    setManageError(null);
 
     try {
       const res = await fetch("/api/stripe/portal", {
@@ -100,7 +99,7 @@ export function MyClubsView({
 
       window.location.href = data.url;
     } catch (err) {
-      setManageError(
+      toast.error(
         err instanceof Error ? err.message : "Falha ao abrir o portal"
       );
       setIsManaging(null);
@@ -264,11 +263,6 @@ export function MyClubsView({
             </section>
           ) : (
             <section className="stagger-in grid gap-4">
-              {manageError && (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-                  {manageError}
-                </div>
-              )}
               {memberMemberships.map((membership) => {
                 const billingInfo = membership.currentPeriodEnd
                   ? `Renova em ${formatDate(membership.currentPeriodEnd)}`

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface DeleteClubButtonProps {
   clubId: string;
@@ -27,10 +28,11 @@ export function DeleteClubButton({ clubId, clubName }: DeleteClubButtonProps) {
         throw new Error(data.error || "Falha ao excluir o clube");
       }
 
+      toast.success("Clube excluído!");
       router.push("/clubs");
       router.refresh();
     } catch (err) {
-      console.error("Falha ao excluir o clube:", err);
+      toast.error("Falha ao excluir o clube");
       setIsDeleting(false);
     }
   }

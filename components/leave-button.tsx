@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { LogOut, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface LeaveButtonProps {
   clubId: string;
@@ -21,12 +22,10 @@ interface LeaveButtonProps {
 
 export function LeaveButton({ clubId }: LeaveButtonProps) {
   const [isLeaving, setIsLeaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
   async function handleLeave() {
     setIsLeaving(true);
-    setError(null);
 
     try {
       const res = await fetch(`/api/clubs/${clubId}/leave`, {
@@ -48,7 +47,7 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
 
       window.location.href = `/clubs/${clubId}`;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
       setIsLeaving(false);
       setOpen(false);
     }
@@ -56,11 +55,6 @@ export function LeaveButton({ clubId }: LeaveButtonProps) {
 
   return (
     <div>
-      {error && (
-        <div className="mb-2 rounded-lg bg-destructive/10 border border-destructive/20 p-2 text-sm text-destructive">
-          {error}
-        </div>
-      )}
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogTrigger asChild>
           <Button variant="outline" disabled={isLeaving} className="gap-2">

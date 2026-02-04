@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 interface JoinButtonProps {
   clubId: string;
@@ -23,11 +24,9 @@ export function JoinButton({
   priceCents,
 }: JoinButtonProps) {
   const [isJoining, setIsJoining] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleJoin() {
     setIsJoining(true);
-    setError(null);
 
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -62,7 +61,7 @@ export function JoinButton({
         throw new Error("Nenhuma URL de checkout retornada");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
       setIsJoining(false);
     }
   }
@@ -86,11 +85,6 @@ export function JoinButton({
 
   return (
     <div>
-      {error && (
-        <div className="mb-4 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
       <Button
         onClick={handleJoin}
         disabled={isJoining}

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 interface Member {
   id: string;
@@ -38,13 +39,11 @@ export function TransferOwnership({ clubId, members }: TransferOwnershipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleTransfer() {
     if (!selectedMemberId) return;
 
     setIsTransferring(true);
-    setError(null);
 
     try {
       const res = await fetch(`/api/clubs/${clubId}/transfer-ownership`, {
@@ -69,10 +68,11 @@ export function TransferOwnership({ clubId, members }: TransferOwnershipProps) {
         throw new Error(data.error || "Falha ao transferir propriedade");
       }
 
+      toast.success("Propriedade transferida!");
       setIsOpen(false);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
       setIsTransferring(false);
     }
   }
@@ -97,12 +97,6 @@ export function TransferOwnership({ clubId, members }: TransferOwnershipProps) {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {error && (
-            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-          
           <div className="space-y-2">
             <Label htmlFor="member">Novo organizador</Label>
             <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>

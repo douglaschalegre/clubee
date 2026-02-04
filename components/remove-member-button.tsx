@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface RemoveMemberButtonProps {
   clubId: string;
@@ -40,9 +41,10 @@ export function RemoveMemberButton({
         throw new Error(data.error || "Falha ao remover membro");
       }
 
+      toast.success("Membro removido.");
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
       setIsRemoving(false);
     }
   }

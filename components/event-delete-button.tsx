@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface EventDeleteButtonProps {
   clubId: string;
@@ -27,13 +28,11 @@ interface EventDeleteButtonProps {
 export function EventDeleteButton({ clubId, eventId, eventTitle, onDeleted }: EventDeleteButtonProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
 
   async function handleDelete() {
     setIsDeleting(true);
-    setError(null);
 
     try {
       const res = await fetch(`/api/clubs/${clubId}/events/${eventId}`, {
@@ -46,19 +45,20 @@ export function EventDeleteButton({ clubId, eventId, eventTitle, onDeleted }: Ev
       }
 
       setOpen(false);
+      toast.success("Evento excluído!");
       if (onDeleted) {
         onDeleted();
       } else {
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
       setIsDeleting(false);
     }
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setConfirmation(""); setError(null); } }}>
+    <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setConfirmation(""); } }}>
       <AlertDialogTrigger asChild>
         <Button
           type="button"
@@ -85,11 +85,6 @@ export function EventDeleteButton({ clubId, eventId, eventTitle, onDeleted }: Ev
           placeholder={eventTitle}
           disabled={isDeleting}
         />
-        {error && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-sm text-destructive">
-            {error}
-          </div>
-        )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
           <AlertDialogAction

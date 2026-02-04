@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 type ConnectStatus =
   | "not_started"
@@ -56,14 +57,12 @@ const statusConfig: Record<
 
 export function StripeConnectSetup({ clubId, status }: StripeConnectSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const config = statusConfig[status];
   const Icon = config.icon;
 
   async function handleOnboard() {
     setIsLoading(true);
-    setError(null);
 
     try {
       const res = await fetch("/api/stripe/connect/onboard", {
@@ -82,14 +81,13 @@ export function StripeConnectSetup({ clubId, status }: StripeConnectSetupProps) 
         window.location.href = data.url;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
       setIsLoading(false);
     }
   }
 
   async function handleDashboard() {
     setIsLoading(true);
-    setError(null);
 
     try {
       const res = await fetch("/api/stripe/connect/dashboard", {
@@ -107,7 +105,7 @@ export function StripeConnectSetup({ clubId, status }: StripeConnectSetupProps) 
         window.open(data.url, "_blank");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
     } finally {
       setIsLoading(false);
     }
@@ -121,12 +119,6 @@ export function StripeConnectSetup({ clubId, status }: StripeConnectSetupProps) 
           {config.label}
         </Badge>
       </div>
-
-      {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
 
       {status === "active" ? (
         <div className="space-y-3">
