@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowRight,
   AlertTriangle,
+  ClipboardCheck,
 } from "lucide-react";
 
 interface PageProps {
@@ -292,12 +293,20 @@ export default async function ClubDetailPage({ params }: PageProps) {
                 {isMember && !isOrganizer && <LeaveButton clubId={id} />}
 
                 {isOrganizer && (
-                  <Button variant="outline" asChild className="gap-2">
-                    <Link href={`/clubs/${id}/settings`}>
-                      <Settings className="h-4 w-4" />
-                      Configurações
-                    </Link>
-                  </Button>
+                  <>
+                    <Button variant="outline" asChild className="gap-2">
+                      <Link href={`/clubs/${id}/approvals`}>
+                        <ClipboardCheck className="h-4 w-4" />
+                        Aprovações
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild className="gap-2">
+                      <Link href={`/clubs/${id}/settings`}>
+                        <Settings className="h-4 w-4" />
+                        Configurações
+                      </Link>
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

@@ -65,9 +65,18 @@ export const approvalActionSchema = z.object({
   rejectionReason: z.string().optional(),
 });
 
+export const bulkApprovalActionSchema = z.object({
+  action: z.enum(["approve", "reject"]),
+  userIds: z
+    .array(z.string().min(1))
+    .min(1, "Selecione pelo menos 1 solicitação"),
+  rejectionReason: z.string().optional(),
+});
+
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export type RsvpInput = z.infer<typeof rsvpSchema>;
 export type EventPricingInput = z.infer<typeof eventPricingSchema>;
 export type EventApprovalInput = z.infer<typeof eventApprovalSchema>;
 export type ApprovalActionInput = z.infer<typeof approvalActionSchema>;
+export type BulkApprovalActionInput = z.infer<typeof bulkApprovalActionSchema>;

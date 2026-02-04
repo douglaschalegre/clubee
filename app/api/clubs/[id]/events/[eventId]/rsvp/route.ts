@@ -117,9 +117,17 @@ export async function POST(request: Request, context: RouteContext) {
             eventId,
             userId: dbUser.id,
             status: "pending_approval",
+            approvedAt: null,
+            approvedById: null,
+            rejectedAt: null,
+            rejectionReason: null,
           },
           update: {
             status: "pending_approval",
+            approvedAt: null,
+            approvedById: null,
+            rejectedAt: null,
+            rejectionReason: null,
           },
         });
         return {
@@ -136,9 +144,17 @@ export async function POST(request: Request, context: RouteContext) {
             eventId,
             userId: dbUser.id,
             status: "pending_approval",
+            approvedAt: null,
+            approvedById: null,
+            rejectedAt: null,
+            rejectionReason: null,
           },
           update: {
             status: "pending_approval",
+            approvedAt: null,
+            approvedById: null,
+            rejectedAt: null,
+            rejectionReason: null,
           },
         });
         return {
