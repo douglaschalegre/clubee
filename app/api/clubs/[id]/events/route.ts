@@ -109,6 +109,9 @@ export async function POST(request: Request, context: RouteContext) {
 
   const data = validation.data;
 
+  // Convert price from R$ to cents
+  const priceCents = data.price ? Math.round(data.price * 100) : null;
+
   try {
     const event = await prisma.event.create({
       data: {
@@ -120,6 +123,8 @@ export async function POST(request: Request, context: RouteContext) {
         locationType: data.locationType,
         locationValue: data.locationValue,
         createdById: dbUser.id,
+        priceCents,
+        requiresApproval: data.requiresApproval ?? false,
       },
     });
 

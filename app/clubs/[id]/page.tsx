@@ -11,6 +11,7 @@ import { MembershipStatusBadge } from "@/components/membership-status-badge";
 import { LeaveButton } from "@/components/leave-button";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ClubEventsSection } from "@/components/club-events-section";
+import { ManageSubscriptionButton } from "@/components/manage-subscription-button";
 import {
   Users,
   Settings,
@@ -223,31 +224,49 @@ export default async function ClubDetailPage({ params }: PageProps) {
                     </a>
                   </Button>
                 ) : !isMember ? (
-                  canAcceptPayments ? (
+                  // Check if club is free or has payments configured
+                  !club.membershipPriceCents || club.membershipPriceCents === 0 ? (
+                    // Free club - direct join
                     <Button
                       asChild
                       className="group gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
                     >
                       <Link href={`/clubs/${id}/join`}>
                         <Sparkles className="h-4 w-4" />
-                        {club.membershipPriceCents
-                          ? `Participar - ${(club.membershipPriceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês`
-                          : "Participar do clube"}
+                        Participar do clube
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </Button>
+                  ) : canAcceptPayments ? (
+                    // Paid club with payments configured
+                    <Button
+                      asChild
+                      className="group gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
+                    >
+                      <Link href={`/clubs/${id}/join`}>
+                        <Sparkles className="h-4 w-4" />
+                        {`Participar - ${(club.membershipPriceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês`}
                         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                       </Link>
                     </Button>
                   ) : (
+                    // Paid club without payments configured
                     <Button disabled variant="secondary" className="gap-2">
                       Pagamentos ainda não configurados
                     </Button>
                   )
                 ) : isActiveMember ? (
-                  <Button asChild className="gap-2">
-                    <Link href={`/clubs/${id}/members`}>
-                      <Users className="h-4 w-4" />
-                      Ver membros
-                    </Link>
-                  </Button>
+                  <>
+                    <Button asChild className="gap-2">
+                      <Link href={`/clubs/${id}/members`}>
+                        <Users className="h-4 w-4" />
+                        Ver membros
+                      </Link>
+                    </Button>
+                    {club.membershipPriceCents && club.membershipPriceCents > 0 && membership && (
+                      <ManageSubscriptionButton membershipId={membership.id} />
+                    )}
+                  </>
                 ) : (
                   <Button variant="secondary" disabled className="gap-2">
                     Assinatura inativa
@@ -270,8 +289,11 @@ export default async function ClubDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* Organizer banner: payment setup needed */}
-      {isOrganizer && !canAcceptPayments && (
+      {/* Organizer banner: payment setup needed (only for paid clubs) */}
+      {isOrganizer &&
+       club.membershipPriceCents &&
+       club.membershipPriceCents > 0 &&
+       !canAcceptPayments && (
         <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
           <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
           <div className="flex-1 text-sm">
@@ -299,6 +321,8 @@ export default async function ClubDetailPage({ params }: PageProps) {
           timezone: event.timezone,
           locationType: event.locationType,
           locationValue: event.locationValue,
+          priceCents: event.priceCents,
+          requiresApproval: event.requiresApproval,
           rsvpCount: event._count.rsvps,
           rsvpStatus: event.rsvps?.[0]?.status ?? null,
           createdBy: event.createdBy ?? null,
@@ -307,6 +331,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
         canViewEventDetails={canViewEventDetails}
         mapApiKey={mapApiKey}
         isLoggedIn={!!session}
+        stripeConnectActive={club.organizer.stripeConnectStatus === "active"}
       />
     </div>
   );

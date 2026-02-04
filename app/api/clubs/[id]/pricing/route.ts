@@ -15,7 +15,7 @@ interface RouteContext {
 /**
  * POST /api/clubs/[id]/pricing
  * Set or update club membership pricing (organizer only).
- * Body: { priceCents: number }
+ * Body: { price: number | null } (in R$, e.g., 29.90)
  */
 export async function POST(request: Request, context: RouteContext) {
   const { id: clubId } = await context.params;
@@ -31,24 +31,36 @@ export async function POST(request: Request, context: RouteContext) {
     return orgCheck;
   }
 
-  // Validate connect status
-  if (user.stripeConnectStatus !== "active") {
+  // Parse body
+  let price: number | null;
+  let priceCents: number | null;
+  try {
+    const body = await request.json();
+    price = body.price ?? body.priceCents; // Support both formats temporarily
+
+    // Handle legacy priceCents format
+    if (body.priceCents !== undefined && body.price === undefined) {
+      priceCents = body.priceCents;
+    } else if (price === null || price === 0) {
+      // Free club
+      priceCents = null;
+    } else {
+      // Convert R$ to cents
+      priceCents = Math.round(price * 100);
+      if (priceCents < 100) {
+        return jsonError("Preço mínimo é R$ 1,00", 400);
+      }
+    }
+  } catch {
+    return jsonError("Corpo da requisição inválido", 400);
+  }
+
+  // Validate Stripe Connect only if setting a paid price
+  if (priceCents && priceCents > 0 && user.stripeConnectStatus !== "active") {
     return jsonError(
       "Configure sua conta Stripe Connect antes de definir preços",
       400
     );
-  }
-
-  // Parse body
-  let priceCents: number;
-  try {
-    const body = await request.json();
-    priceCents = body.priceCents;
-    if (!priceCents || typeof priceCents !== "number" || priceCents < 100) {
-      return jsonError("Preço mínimo é R$ 1,00 (100 centavos)", 400);
-    }
-  } catch {
-    return jsonError("Corpo da requisição inválido", 400);
   }
 
   const club = await prisma.club.findUnique({
@@ -66,9 +78,27 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   try {
-    let stripePriceId: string;
-    let stripeProductId: string;
+    let stripePriceId: string | null = null;
+    let stripeProductId: string | null = null;
 
+    // If setting to free, clear Stripe fields
+    if (!priceCents || priceCents === 0) {
+      const updated = await prisma.club.update({
+        where: { id: clubId },
+        data: {
+          stripePriceId: null,
+          stripeProductId: null,
+          membershipPriceCents: null,
+        },
+      });
+
+      return jsonSuccess({
+        message: "Clube definido como gratuito",
+        membershipPriceCents: null,
+      });
+    }
+
+    // Setting a paid price
     if (club.stripeProductId && club.stripePriceId) {
       // Update existing: archive old price, create new one
       const newPrice = await updateClubPrice(

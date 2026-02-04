@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { EventMapPreview } from "@/components/event-map-preview";
+import { Ticket, UserCheck, Pencil, CreditCard } from "lucide-react";
+import { toast } from "sonner";
 
 const TIMEZONES = [
   { value: "America/Sao_Paulo", label: "Brasília (GMT-3)" },
@@ -44,8 +55,12 @@ interface EventFormProps {
     timezone?: string;
     locationType?: "remote" | "physical";
     locationValue?: string;
+    priceCents?: number | null;
+    requiresApproval?: boolean;
   };
   onSaved?: () => void;
+  stripeConnectActive?: boolean;
+  settingsUrl?: string;
 }
 
 function parseInitialDateTime(startsAt?: string, timezone?: string) {
@@ -76,6 +91,8 @@ export function EventForm({
   mode,
   initialData,
   onSaved,
+  stripeConnectActive,
+  settingsUrl,
 }: EventFormProps) {
   const initial = parseInitialDateTime(
     initialData?.startsAt,
@@ -96,18 +113,50 @@ export function EventForm({
   const [locationValue, setLocationValue] = useState(
     initialData?.locationValue ?? "",
   );
+  const [price, setPrice] = useState<number | null>(
+    initialData?.priceCents ? initialData.priceCents / 100 : null
+  );
+  const [priceInput, setPriceInput] = useState(
+    initialData?.priceCents ? (initialData.priceCents / 100).toFixed(2) : ""
+  );
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [requiresApproval, setRequiresApproval] = useState(
+    initialData?.requiresApproval ?? false
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [showStripeDialog, setShowStripeDialog] = useState(false);
+
+  // Update state when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title ?? "");
+      setDescription(initialData.description ?? "");
+      const { date: newDate, time: newTime } = parseInitialDateTime(
+        initialData.startsAt,
+        initialData.timezone
+      );
+      setDate(newDate);
+      setTime(newTime);
+      setTimezone(initialData.timezone ?? "America/Sao_Paulo");
+      setLocationType(initialData.locationType ?? "remote");
+      setLocationValue(initialData.locationValue ?? "");
+      setPrice(initialData.priceCents ? initialData.priceCents / 100 : null);
+      setPriceInput(initialData.priceCents ? (initialData.priceCents / 100).toFixed(2) : "");
+      setIsEditingPrice(false);
+      setRequiresApproval(initialData.requiresApproval ?? false);
+    }
+  }, [initialData]);
 
   const mapApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setIsSubmitting(true);
-    setError(null);
+    setValidationError(null);
 
     if (!date || !time) {
-      setError("Data e hora são obrigatórios");
+      setValidationError("Data e hora são obrigatórios");
       setIsSubmitting(false);
       return;
     }
@@ -122,6 +171,8 @@ export function EventForm({
         timezone,
         locationType,
         locationValue,
+        price,
+        requiresApproval,
       };
 
       const res = await fetch(
@@ -151,6 +202,7 @@ export function EventForm({
         throw new Error(data.error || "Falha ao salvar evento");
       }
 
+      toast.success(mode === "create" ? "Evento criado!" : "Evento atualizado!");
       onSaved?.();
       if (mode === "create") {
         setTitle("");
@@ -158,9 +210,13 @@ export function EventForm({
         setDate("");
         setTime("");
         setLocationValue("");
+        setPrice(null);
+        setPriceInput("");
+        setIsEditingPrice(false);
+        setRequiresApproval(false);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Algo deu errado");
+      toast.error(err instanceof Error ? err.message : "Algo deu errado");
     } finally {
       setIsSubmitting(false);
     }
@@ -168,9 +224,9 @@ export function EventForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
+      {validationError && (
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-sm text-destructive">
-          {error}
+          {validationError}
         </div>
       )}
       <div className="space-y-2">
@@ -285,6 +341,84 @@ export function EventForm({
           </Select>
         </div>
       </div>
+
+      {/* Event options group */}
+      <div className="space-y-1.5">
+        <Label className="text-sm font-medium">Opções do evento</Label>
+        <div className="rounded-lg border divide-y">
+          {/* Price row */}
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+            <div className="flex items-center gap-2.5 text-sm">
+              <Ticket className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span>Preço</span>
+            </div>
+            {isEditingPrice ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">R$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
+                  onBlur={() => {
+                    const val = parseFloat(priceInput);
+                    if (!priceInput || isNaN(val) || val <= 0) {
+                      setPrice(null);
+                      setPriceInput("");
+                    } else {
+                      setPrice(val);
+                    }
+                    setIsEditingPrice(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  autoFocus
+                  className="h-7 w-24 text-right text-sm px-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!stripeConnectActive) {
+                    setShowStripeDialog(true);
+                  } else {
+                    setIsEditingPrice(true);
+                  }
+                }}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span>
+                  {price && price > 0
+                    ? `R$ ${price.toFixed(2).replace(".", ",")}`
+                    : "Gratuito"}
+                </span>
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Approval row */}
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+            <div className="flex items-center gap-2.5 text-sm">
+              <UserCheck className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span>Requer aprovação</span>
+            </div>
+            <Switch
+              id="requiresApproval"
+              checked={requiresApproval}
+              onCheckedChange={setRequiresApproval}
+            />
+          </div>
+        </div>
+      </div>
+
       <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
         {isSubmitting
           ? mode === "create"
@@ -294,6 +428,34 @@ export function EventForm({
             ? "Criar evento"
             : "Salvar alterações"}
       </Button>
+
+      <Dialog open={showStripeDialog} onOpenChange={setShowStripeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Configurar Stripe
+            </DialogTitle>
+            <DialogDescription>
+              Para cobrar por eventos, você precisa configurar sua conta Stripe
+              primeiro.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowStripeDialog(false)}
+            >
+              Cancelar
+            </Button>
+            {settingsUrl && (
+              <Button asChild>
+                <a href={settingsUrl}>Configurar Stripe</a>
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

@@ -200,3 +200,114 @@ export async function updateClubPrice(
     recurring: { interval },
   });
 }
+
+/**
+ * Create Stripe Product and Price for event (one-time payment).
+ */
+export async function createEventProduct(
+  eventTitle: string,
+  priceCents: number,
+  currency = "brl"
+): Promise<{ product: Stripe.Product; price: Stripe.Price }> {
+  const product = await stripe.products.create({
+    name: `Evento - ${eventTitle}`,
+    metadata: { source: "clubee", type: "event" },
+  });
+
+  const price = await stripe.prices.create({
+    product: product.id,
+    unit_amount: priceCents,
+    currency,
+    // No recurring field = one-time payment
+  });
+
+  return { product, price };
+}
+
+/**
+ * Update event price (archive old, create new).
+ */
+export async function updateEventPrice(
+  productId: string,
+  oldPriceId: string,
+  priceCents: number,
+  currency = "brl"
+): Promise<Stripe.Price> {
+  await stripe.prices.update(oldPriceId, { active: false });
+
+  return stripe.prices.create({
+    product: productId,
+    unit_amount: priceCents,
+    currency,
+  });
+}
+
+/**
+ * Create checkout session for event payment (mode: "payment").
+ * NOTE: Different from club checkout which uses mode: "subscription"
+ */
+export async function createEventCheckoutSession({
+  customerId,
+  priceId,
+  eventId,
+  userId,
+  clubId,
+  successUrl,
+  cancelUrl,
+  stripeConnectAccountId,
+  applicationFeePercent,
+}: {
+  customerId: string;
+  priceId: string;
+  eventId: string;
+  userId: string;
+  clubId: string;
+  successUrl: string;
+  cancelUrl: string;
+  stripeConnectAccountId?: string;
+  applicationFeePercent?: number;
+}): Promise<Stripe.Checkout.Session> {
+  // Calculate application fee if needed
+  let applicationFeeAmount: number | undefined;
+  if (stripeConnectAccountId && applicationFeePercent) {
+    const price = await stripe.prices.retrieve(priceId);
+    if (price.unit_amount) {
+      applicationFeeAmount = Math.round(
+        (applicationFeePercent / 100) * price.unit_amount
+      );
+    }
+  }
+
+  return stripe.checkout.sessions.create({
+    customer: customerId,
+    mode: "payment", // One-time payment
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    metadata: {
+      type: "event_payment",
+      eventId,
+      userId,
+      clubId,
+    },
+    payment_intent_data: {
+      metadata: {
+        type: "event_payment",
+        eventId,
+        userId,
+        clubId,
+      },
+      ...(stripeConnectAccountId && {
+        transfer_data: {
+          destination: stripeConnectAccountId,
+        },
+        application_fee_amount: applicationFeeAmount,
+      }),
+    },
+  });
+}

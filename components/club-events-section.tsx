@@ -35,8 +35,19 @@ type EventSummary = {
   locationType?: "remote" | "physical" | null;
   locationValue?: string | null;
   rsvpCount: number;
-  rsvpStatus?: "going" | "not_going" | null;
+  rsvpStatus?:
+    | "going"
+    | "not_going"
+    | "pending_payment"
+    | "pending_approval"
+    | "approved_pending_payment"
+    | "rejected"
+    | "payment_failed"
+    | null;
   createdBy?: EventCreator | null;
+  priceCents?: number | null;
+  requiresApproval?: boolean;
+  userPaidAt?: Date | null;
 };
 
 interface ClubEventsSectionProps {
@@ -46,6 +57,7 @@ interface ClubEventsSectionProps {
   canViewEventDetails: boolean;
   mapApiKey?: string | null;
   isLoggedIn: boolean;
+  stripeConnectActive?: boolean;
 }
 
 export function ClubEventsSection({
@@ -55,6 +67,7 @@ export function ClubEventsSection({
   canViewEventDetails,
   mapApiKey,
   isLoggedIn,
+  stripeConnectActive,
 }: ClubEventsSectionProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -166,6 +179,8 @@ export function ClubEventsSection({
                     clubId={clubId}
                     mode="create"
                     onSaved={handleSaved}
+                    stripeConnectActive={stripeConnectActive}
+                    settingsUrl={`/clubs/${clubId}/settings`}
                   />
                 </DialogContent>
               </Dialog>
@@ -272,6 +287,7 @@ export function ClubEventsSection({
           canViewEventDetails={canViewEventDetails}
           mapApiKey={mapApiKey}
           isLoggedIn={isLoggedIn}
+          stripeConnectActive={stripeConnectActive}
         />
       )}
     </section>

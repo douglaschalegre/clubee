@@ -31,11 +31,28 @@ export async function POST(request: Request) {
   // Handle the event
   try {
     switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutSessionCompleted(
-          event.data.object as Stripe.Checkout.Session
-        );
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const sessionType = session.metadata?.type;
+
+        if (sessionType === "event_payment") {
+          await handleEventPaymentCompleted(session);
+        } else {
+          // Existing club membership logic
+          await handleCheckoutSessionCompleted(session);
+        }
         break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const intentType = paymentIntent.metadata?.type;
+
+        if (intentType === "event_payment") {
+          await handleEventPaymentFailed(paymentIntent);
+        }
+        break;
+      }
 
       case "customer.subscription.updated":
         await handleSubscriptionUpdated(
@@ -294,4 +311,67 @@ async function handleAccountDeauthorized(accountId: string) {
   });
 
   console.log(`Connect account ${accountId} deauthorized, user reset`);
+}
+
+/**
+ * Handle event payment completion - update RSVP to "going".
+ */
+async function handleEventPaymentCompleted(session: Stripe.Checkout.Session) {
+  const { eventId, userId } = session.metadata || {};
+
+  if (!eventId || !userId) {
+    console.error("Missing metadata in event payment session:", session.id);
+    return;
+  }
+
+  const paymentIntentId = session.payment_intent as string;
+  const amountPaid = session.amount_total;
+
+  try {
+    await prisma.eventRsvp.update({
+      where: { eventId_userId: { eventId, userId } },
+      data: {
+        status: "going",
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: paymentIntentId,
+        paidAt: new Date(),
+        paidAmountCents: amountPaid,
+      },
+    });
+
+    console.log(
+      `Event payment completed for user ${userId}, event ${eventId}, amount: ${amountPaid}`
+    );
+  } catch (error) {
+    console.error("Failed to update RSVP after event payment:", error);
+  }
+}
+
+/**
+ * Handle event payment failure - update RSVP to "payment_failed".
+ */
+async function handleEventPaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+  const { eventId, userId } = paymentIntent.metadata || {};
+
+  if (!eventId || !userId) {
+    console.log("Missing metadata in event payment intent:", paymentIntent.id);
+    return;
+  }
+
+  try {
+    await prisma.eventRsvp.updateMany({
+      where: {
+        eventId,
+        userId,
+        status: { in: ["pending_payment", "approved_pending_payment"] },
+      },
+      data: { status: "payment_failed" },
+    });
+
+    console.log(
+      `Event payment failed for user ${userId}, event ${eventId}`
+    );
+  } catch (error) {
+    console.error("Failed to update RSVP after payment failure:", error);
+  }
 }

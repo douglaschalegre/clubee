@@ -106,6 +106,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const data = validation.data;
 
+  // Convert price from R$ to cents if provided
+  const priceCents = data.price !== undefined
+    ? (data.price ? Math.round(data.price * 100) : null)
+    : undefined;
+
   try {
     // If startsAt is being updated, resolve the timezone for conversion
     let startsAtUTC: Date | undefined;
@@ -133,6 +138,8 @@ export async function PATCH(request: Request, context: RouteContext) {
         ...(data.timezone !== undefined && { timezone: data.timezone }),
         ...(data.locationType !== undefined && { locationType: data.locationType }),
         ...(data.locationValue !== undefined && { locationValue: data.locationValue }),
+        ...(priceCents !== undefined && { priceCents }),
+        ...(data.requiresApproval !== undefined && { requiresApproval: data.requiresApproval }),
       },
     });
 

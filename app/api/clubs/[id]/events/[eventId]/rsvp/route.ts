@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
-import { rsvpSchema } from "@/lib/validations/event";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 
 interface RouteContext {
@@ -24,21 +23,35 @@ export async function POST(request: Request, context: RouteContext) {
     return jsonError("Não autorizado", 401);
   }
 
-  const membership = await prisma.membership.findUnique({
-    where: { userId_clubId: { userId: dbUser.id, clubId } },
-  });
-
-  if (!membership || membership.status !== "active") {
-    return jsonError("Assinatura ativa obrigatória", 403);
-  }
-
+  // Fetch event with pricing and approval settings
   const event = await prisma.event.findFirst({
     where: { id: eventId, clubId },
-    select: { id: true },
+    select: {
+      id: true,
+      priceCents: true,
+      requiresApproval: true,
+      club: {
+        select: {
+          membershipPriceCents: true,
+          organizerId: true,
+        },
+      },
+    },
   });
 
   if (!event) {
     return jsonError("Evento não encontrado", 404);
+  }
+
+  const isPaidEvent = event.priceCents && event.priceCents > 0;
+  const needsApproval = event.requiresApproval;
+  const isOrganizer = event.club.organizerId === dbUser.id;
+  const isPaidClub =
+    event.club.membershipPriceCents && event.club.membershipPriceCents > 0;
+
+  // Organizers can't RSVP to their own events
+  if (isOrganizer) {
+    return jsonError("Organizadores não podem responder aos próprios eventos", 400);
   }
 
   let body: unknown;
@@ -48,21 +61,113 @@ export async function POST(request: Request, context: RouteContext) {
     return jsonError("JSON inválido", 400);
   }
 
-  const validation = rsvpSchema.safeParse(body);
-  if (!validation.success) {
-    return jsonError(validation.error.issues[0].message, 400);
+  const status = (body as { status?: string })?.status;
+
+  if (!status || !["going", "not_going"].includes(status)) {
+    return jsonError("Status deve ser 'going' ou 'not_going'", 400);
   }
 
-  const { status } = validation.data;
+  // Handle "not_going" (always simple)
+  if (status === "not_going") {
+    try {
+      const rsvp = await prisma.eventRsvp.upsert({
+        where: { eventId_userId: { eventId, userId: dbUser.id } },
+        create: { eventId, userId: dbUser.id, status },
+        update: { status },
+      });
+      return jsonSuccess({ rsvp, status: "not_going" });
+    } catch (error) {
+      console.error("Falha ao atualizar RSVP:", error);
+      return jsonError("Falha ao atualizar RSVP", 500);
+    }
+  }
 
-  try {
-    const rsvp = await prisma.eventRsvp.upsert({
-      where: { eventId_userId: { eventId, userId: dbUser.id } },
-      create: { eventId, userId: dbUser.id, status },
-      update: { status },
+  // Handle "going" based on event configuration
+
+  // Check if event requires membership (free events in paid clubs)
+  const requiresMembership = !isPaidEvent && isPaidClub;
+
+  if (requiresMembership) {
+    const membership = await prisma.membership.findUnique({
+      where: { userId_clubId: { userId: dbUser.id, clubId } },
     });
 
-    return jsonSuccess({ rsvp });
+    if (!membership || membership.status !== "active") {
+      return jsonError(
+        "Assinatura ativa obrigatória para eventos gratuitos",
+        403
+      );
+    }
+  }
+
+  try {
+    if (needsApproval && isPaidEvent) {
+      // Approval + Payment required
+      const rsvp = await prisma.eventRsvp.upsert({
+        where: { eventId_userId: { eventId, userId: dbUser.id } },
+        create: {
+          eventId,
+          userId: dbUser.id,
+          status: "pending_approval",
+        },
+        update: {
+          status: "pending_approval",
+        },
+      });
+      return jsonSuccess({
+        rsvp,
+        requiresApproval: true,
+        requiresPayment: true,
+      });
+    } else if (needsApproval) {
+      // Approval only (free event)
+      const rsvp = await prisma.eventRsvp.upsert({
+        where: { eventId_userId: { eventId, userId: dbUser.id } },
+        create: {
+          eventId,
+          userId: dbUser.id,
+          status: "pending_approval",
+        },
+        update: {
+          status: "pending_approval",
+        },
+      });
+      return jsonSuccess({
+        rsvp,
+        requiresApproval: true,
+      });
+    } else if (isPaidEvent) {
+      // Payment only (no approval)
+      const rsvp = await prisma.eventRsvp.upsert({
+        where: { eventId_userId: { eventId, userId: dbUser.id } },
+        create: {
+          eventId,
+          userId: dbUser.id,
+          status: "pending_payment",
+        },
+        update: {
+          status: "pending_payment",
+        },
+      });
+      return jsonSuccess({
+        rsvp,
+        requiresPayment: true,
+      });
+    } else {
+      // Free event, no approval (instant confirmation)
+      const rsvp = await prisma.eventRsvp.upsert({
+        where: { eventId_userId: { eventId, userId: dbUser.id } },
+        create: {
+          eventId,
+          userId: dbUser.id,
+          status: "going",
+        },
+        update: {
+          status: "going",
+        },
+      });
+      return jsonSuccess({ rsvp });
+    }
   } catch (error) {
     console.error("Falha ao atualizar RSVP:", error);
     return jsonError("Falha ao atualizar RSVP", 500);

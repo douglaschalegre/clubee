@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Header } from "@/components/header";
+import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           {children}
         </main>
+        <Toaster richColors />
       </body>
     </html>
   );

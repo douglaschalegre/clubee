@@ -57,7 +57,12 @@ export async function POST(request: Request) {
     return jsonError(validation.error.issues[0].message, 400);
   }
 
-  const { name, description, imageUrl } = validation.data;
+  const { name, description, imageUrl, membershipPrice } = validation.data;
+
+  // Convert price from R$ to cents
+  const membershipPriceCents = membershipPrice
+    ? Math.round(membershipPrice * 100)
+    : null;
 
   try {
     // Create club and organizer membership in a transaction
@@ -68,6 +73,7 @@ export async function POST(request: Request) {
           name,
           description,
           imageUrl,
+          membershipPriceCents,
           organizerId: user.id,
         },
       });

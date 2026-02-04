@@ -19,11 +19,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { EventDeleteButton } from "@/components/event-delete-button";
 import { EventForm } from "@/components/event-form";
 import { EventMapPreview } from "@/components/event-map-preview";
 import { EventRsvpButtons } from "@/components/event-rsvp-buttons";
-import { CalendarDays, Clock, MapPin, Settings, Users, Video } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Settings, Users, Video, CheckCircle, XCircle } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 
 type EventCreator = {
   id: string;
@@ -40,8 +43,11 @@ export type DrawerEvent = {
   locationType?: "remote" | "physical" | null;
   locationValue?: string | null;
   rsvpCount: number;
-  rsvpStatus?: "going" | "not_going" | null;
+  rsvpStatus?: "going" | "not_going" | "pending_payment" | "pending_approval" | "approved_pending_payment" | "rejected" | "payment_failed" | null;
   createdBy?: EventCreator | null;
+  priceCents?: number | null;
+  requiresApproval?: boolean;
+  userPaidAt?: Date | null;
 };
 
 interface EventDetailDrawerProps {
@@ -53,6 +59,7 @@ interface EventDetailDrawerProps {
   canViewEventDetails: boolean;
   mapApiKey?: string | null;
   isLoggedIn: boolean;
+  stripeConnectActive?: boolean;
 }
 
 export function EventDetailDrawer({
@@ -64,6 +71,7 @@ export function EventDetailDrawer({
   canViewEventDetails,
   mapApiKey,
   isLoggedIn,
+  stripeConnectActive,
 }: EventDetailDrawerProps) {
   const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -107,7 +115,17 @@ export function EventDetailDrawer({
     return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
   })();
 
-  function handleStatusChange(status: "going" | "not_going") {
+  function handleStatusChange(
+    status:
+      | "going"
+      | "not_going"
+      | "pending_payment"
+      | "pending_approval"
+      | "approved_pending_payment"
+      | "rejected"
+      | "payment_failed"
+      | null
+  ) {
     const wasGoing = currentRsvpStatus === "going";
     const nowGoing = status === "going";
 
@@ -181,8 +199,12 @@ export function EventDetailDrawer({
                           timezone: event.timezone,
                           locationType: event.locationType ?? undefined,
                           locationValue: event.locationValue ?? undefined,
+                          priceCents: event.priceCents,
+                          requiresApproval: event.requiresApproval,
                         }}
                         onSaved={handleEdited}
+                        stripeConnectActive={stripeConnectActive}
+                        settingsUrl={`/clubs/${clubId}/settings`}
                       />
                     </DialogContent>
                   </Dialog>
@@ -198,9 +220,67 @@ export function EventDetailDrawer({
             <DrawerDescription className="sr-only">
               Detalhes do evento {event.title}
             </DrawerDescription>
+
+            {/* Price and Approval Badges */}
+            <div className="flex gap-2 flex-wrap">
+              {event.priceCents && event.priceCents > 0 && (
+                <Badge variant="secondary">
+                  {formatCurrency(event.priceCents)}
+                </Badge>
+              )}
+              {event.priceCents === 0 || event.priceCents === null ? (
+                <Badge variant="outline">Gratuito</Badge>
+              ) : null}
+              {event.requiresApproval && (
+                <Badge variant="outline">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Requer aprovação
+                </Badge>
+              )}
+            </div>
           </DrawerHeader>
 
           <div className="space-y-5">
+            {/* Status indicators */}
+            {currentRsvpStatus === "pending_approval" && (
+              <Alert>
+                <Clock className="h-4 w-4" />
+                <AlertTitle>Aguardando aprovação</AlertTitle>
+                <AlertDescription>
+                  O organizador revisará sua solicitação em breve.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {currentRsvpStatus === "approved_pending_payment" && (
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertTitle>Aprovado! Complete o pagamento</AlertTitle>
+                <AlertDescription>
+                  Sua participação foi aprovada. Complete o pagamento para confirmar.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {currentRsvpStatus === "rejected" && (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Solicitação negada</AlertTitle>
+                <AlertDescription>
+                  O organizador não aprovou sua participação. Você pode solicitar novamente.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {currentRsvpStatus === "payment_failed" && (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Pagamento falhou</AlertTitle>
+                <AlertDescription>
+                  Houve um problema com seu pagamento. Tente novamente.
+                </AlertDescription>
+              </Alert>
+            )}
             {/* Metadata row */}
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
               {/* Left: date · time */}
@@ -241,9 +321,11 @@ export function EventDetailDrawer({
               <EventRsvpButtons
                 clubId={clubId}
                 eventId={event.id}
-                initialStatus={event.rsvpStatus ?? null}
+                initialStatus={currentRsvpStatus}
                 onStatusChange={handleStatusChange}
                 isOrganizer={isOrganizer}
+                priceCents={event.priceCents}
+                requiresApproval={event.requiresApproval}
               />
             )}
 
