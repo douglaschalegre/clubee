@@ -70,6 +70,9 @@ export async function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/my-clubs?view=organizing">Meus clubes</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/financeiro">Painel financeiro</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <a href="/auth/logout">Sair</a>
