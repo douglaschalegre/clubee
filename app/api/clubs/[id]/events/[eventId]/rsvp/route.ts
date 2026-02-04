@@ -194,7 +194,7 @@ export async function POST(request: Request, context: RouteContext) {
           const reservedCount = await tx.eventRsvp.count({
             where: {
               eventId,
-              status: { in: RESERVED_RSVP_STATUSES },
+              status: { in: [...RESERVED_RSVP_STATUSES] },
             },
           });
 

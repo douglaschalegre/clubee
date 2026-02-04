@@ -142,7 +142,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
         by: ["eventId"],
         where: {
           eventId: { in: eventIds },
-          status: { in: RESERVED_RSVP_STATUSES },
+          status: { in: [...RESERVED_RSVP_STATUSES] },
         },
         _count: { _all: true },
       })

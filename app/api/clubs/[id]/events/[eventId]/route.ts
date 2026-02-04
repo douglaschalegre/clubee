@@ -135,7 +135,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       const reservedCount = await prisma.eventRsvp.count({
         where: {
           eventId,
-          status: { in: RESERVED_RSVP_STATUSES },
+          status: { in: [...RESERVED_RSVP_STATUSES] },
         },
       });
 
