@@ -25,27 +25,28 @@ export default async function ClubsPage() {
         {/* Background decoration */}
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-amber/10 blur-3xl" />
-        
+
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/90 px-3 py-1 text-sm font-medium">
               <Sparkles className="h-3.5 w-3.5" />
               <span>A comunidade espera</span>
             </div>
-            <h1 
+            <h1
               className="text-4xl font-bold tracking-tight sm:text-5xl"
               style={{ fontFamily: "var(--font-display)" }}
             >
               Descubra clubes
             </h1>
             <p className="mt-3 text-lg text-muted-foreground">
-              Encontre sua tribo. Entre em comunidades que combinam com suas paixões e interesses.
+              Encontre sua tribo. Entre em comunidades que combinam com suas
+              paixões e interesses.
             </p>
           </div>
-          
+
           {session && (
-            <Button 
-              asChild 
+            <Button
+              asChild
               size="lg"
               className="group shrink-0 gap-2 shadow-honey transition-all hover:shadow-honey-lg hover:scale-[1.02]"
             >
@@ -66,7 +67,7 @@ export default async function ClubsPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
               <span className="text-3xl">🍯</span>
             </div>
-            <h2 
+            <h2
               className="text-xl font-semibold"
               style={{ fontFamily: "var(--font-display)" }}
             >
@@ -91,10 +92,11 @@ export default async function ClubsPage() {
         <section>
           <div className="mb-6 flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">
-              {clubs.length} {clubs.length === 1 ? "clube" : "clubes"} disponíveis
+              {clubs.length} {clubs.length === 1 ? "clube" : "clubes"}{" "}
+              disponíveis
             </p>
           </div>
-          
+
           <div className="stagger-in grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {clubs.map((club) => (
               <ClubCard
