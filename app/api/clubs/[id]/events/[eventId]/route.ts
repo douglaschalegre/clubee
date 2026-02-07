@@ -78,7 +78,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true },
+    select: {
+      id: true,
+      stripeConnectAccountId: true,
+      stripeConnectChargesEnabled: true,
+    },
   });
 
   if (!dbUser) {
