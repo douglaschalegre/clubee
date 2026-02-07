@@ -154,7 +154,7 @@ export async function POST(_request: Request, context: RouteContext) {
     }
 
     // Create checkout session
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+    const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
     const successUrl = `${baseUrl}/clubs/${clubId}?eventId=${eventId}`;
     const cancelUrl = `${baseUrl}/clubs/${clubId}?eventId=${eventId}`;
 
