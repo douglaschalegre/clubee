@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
+import { prisma } from "@/lib/db";
 import { ClubForm } from "@/components/club-form";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { Sparkles } from "lucide-react";
@@ -9,6 +10,19 @@ export default async function NewClubPage() {
 
   if (!session) {
     redirect("/auth/login");
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { auth0Id: session.user.sub },
+    select: { profileCompleted: true },
+  });
+
+  if (!dbUser) {
+    redirect("/auth/login");
+  }
+
+  if (!dbUser.profileCompleted) {
+    redirect(`/profile?returnTo=${encodeURIComponent("/clubs/new")}`);
   }
 
   return (

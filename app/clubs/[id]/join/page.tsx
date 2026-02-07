@@ -21,6 +21,19 @@ export default async function JoinClubPage({ params }: PageProps) {
     redirect("/auth/login");
   }
 
+  const dbUser = await prisma.user.findUnique({
+    where: { auth0Id: session.user.sub },
+    select: { id: true, profileCompleted: true },
+  });
+
+  if (!dbUser) {
+    redirect("/auth/login");
+  }
+
+  if (!dbUser.profileCompleted) {
+    redirect(`/profile?returnTo=${encodeURIComponent(`/clubs/${id}/join`)}`);
+  }
+
   // Fetch club with pricing and organizer connect info
   const club = await prisma.club.findUnique({
     where: { id },
@@ -45,22 +58,15 @@ export default async function JoinClubPage({ params }: PageProps) {
   }
 
   // Check if already a member
-  const dbUser = await prisma.user.findUnique({
-    where: { auth0Id: session.user.sub },
-    select: { id: true },
+  const existingMembership = await prisma.membership.findUnique({
+    where: {
+      userId_clubId: { userId: dbUser.id, clubId: id },
+    },
   });
 
-  if (dbUser) {
-    const existingMembership = await prisma.membership.findUnique({
-      where: {
-        userId_clubId: { userId: dbUser.id, clubId: id },
-      },
-    });
-
-    if (existingMembership) {
-      // Already a member, redirect to club page
-      redirect(`/clubs/${id}`);
-    }
+  if (existingMembership) {
+    // Already a member, redirect to club page
+    redirect(`/clubs/${id}`);
   }
 
   return (

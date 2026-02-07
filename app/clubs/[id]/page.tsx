@@ -331,7 +331,7 @@ export default async function ClubDetailPage({ params }: PageProps) {
             </span>
           </div>
           <Button asChild size="sm" variant="outline" className="shrink-0">
-            <Link href={`/clubs/${id}/settings`}>Configurar</Link>
+            <Link href={`/clubs/${id}/settings#pagamentos`}>Configurar</Link>
           </Button>
         </div>
       )}

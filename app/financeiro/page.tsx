@@ -63,11 +63,15 @@ export default async function FinanceiroPage() {
 
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { stripeConnectStatus: true, stripeConnectAccountId: true },
+    select: { stripeConnectStatus: true, stripeConnectAccountId: true, profileCompleted: true },
   });
 
   if (!dbUser) {
     redirect("/auth/login");
+  }
+
+  if (!dbUser.profileCompleted) {
+    redirect(`/profile?returnTo=${encodeURIComponent("/financeiro")}`);
   }
 
   const status = dbUser.stripeConnectStatus;

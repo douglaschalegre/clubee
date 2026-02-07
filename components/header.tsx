@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth0 } from "@/lib/auth0";
+import { findOrCreateUser } from "@/lib/user";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,6 +13,24 @@ import { LoginButtons } from "@/components/login-buttons";
 
 export async function Header() {
   const session = await auth0.getSession();
+  let dbUser = null;
+
+  if (session?.user) {
+    try {
+      dbUser = await findOrCreateUser({
+        sub: session.user.sub,
+        name: session.user.name,
+        email: session.user.email,
+        picture: session.user.picture,
+      });
+    } catch {
+      dbUser = null;
+    }
+  }
+
+  const displayName =
+    dbUser?.name ?? session?.user?.name ?? session?.user?.email ?? "Usuário";
+  const avatarUrl = dbUser?.avatarUrl ?? session?.user?.picture ?? undefined;
 
   return (
     <header className="relative border-b border-border/50 bg-card/80 backdrop-blur-sm">
@@ -59,14 +78,17 @@ export async function Header() {
                     aria-label="Abrir menu do usuário"
                   >
                     <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                      <AvatarImage src={session.user.picture} alt={session.user.name} />
+                      <AvatarImage src={avatarUrl} alt={displayName} />
                       <AvatarFallback className="bg-primary/10 text-sm font-medium">
-                        {session.user.name?.[0]?.toUpperCase() ?? "U"}
+                        {displayName[0]?.toUpperCase() ?? "U"}
                       </AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">Perfil</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/my-clubs?view=organizing">Meus clubes</Link>
                   </DropdownMenuItem>

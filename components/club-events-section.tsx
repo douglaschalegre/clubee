@@ -182,7 +182,7 @@ export function ClubEventsSection({
                     mode="create"
                     onSaved={handleSaved}
                     stripeConnectActive={stripeConnectActive}
-                    settingsUrl={`/clubs/${clubId}/settings`}
+                    settingsUrl={`/clubs/${clubId}/settings#pagamentos`}
                   />
                 </DialogContent>
               </Dialog>

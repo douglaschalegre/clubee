@@ -220,7 +220,7 @@ export function MyClubsView({
                   <div className="flex shrink-0 items-center gap-2">
                     {connectStatus !== "active" || !club.stripePriceId ? (
                       <Button asChild variant="outline" size="sm" className="gap-2">
-                        <Link href={`/clubs/${club.id}/settings`}>
+                        <Link href={`/clubs/${club.id}/settings#pagamentos`}>
                           Configurar pagamentos
                         </Link>
                       </Button>

@@ -211,7 +211,7 @@ export function EventDetailDrawer({
                         }}
                         onSaved={handleEdited}
                         stripeConnectActive={stripeConnectActive}
-                        settingsUrl={`/clubs/${clubId}/settings`}
+                        settingsUrl={`/clubs/${clubId}/settings#pagamentos`}
                       />
                     </DialogContent>
                   </Dialog>

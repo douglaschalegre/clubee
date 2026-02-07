@@ -45,11 +45,15 @@ export default async function SettingsPage({ params }: PageProps) {
   // Get current user
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true, stripeConnectStatus: true },
+    select: { id: true, stripeConnectStatus: true, profileCompleted: true },
   });
 
   if (!dbUser) {
     redirect("/auth/login");
+  }
+
+  if (!dbUser.profileCompleted) {
+    redirect(`/profile?returnTo=${encodeURIComponent(`/clubs/${clubId}/settings`)}`);
   }
 
   // Fetch club
@@ -165,7 +169,10 @@ export default async function SettingsPage({ params }: PageProps) {
       </Card>
 
       {/* Payments & Pricing */}
-      <div className="border-gradient shadow-honey-lg hover-lift isolate">
+      <div
+        id="pagamentos"
+        className="scroll-mt-24 border-gradient shadow-honey-lg hover-lift isolate"
+      >
         <Card className="relative gap-0 overflow-hidden border-0 bg-card/80 py-0 shadow-none">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_oklch(0.98_0.02_95/0.7)_0%,_transparent_60%)] opacity-60" />
           <div className="pointer-events-none absolute inset-0 pattern-honeycomb opacity-30" />

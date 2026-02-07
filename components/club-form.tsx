@@ -366,7 +366,9 @@ export function ClubForm({ mode, initialData, clubId, membershipPriceCents, stri
             </Button>
             {clubId && (
               <Button asChild>
-                <a href={`/clubs/${clubId}/settings`}>Configurar Stripe</a>
+                <a href={`/clubs/${clubId}/settings#pagamentos`}>
+                  Configurar Stripe
+                </a>
               </Button>
             )}
           </DialogFooter>

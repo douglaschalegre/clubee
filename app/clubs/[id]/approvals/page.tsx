@@ -32,11 +32,18 @@ export default async function ApprovalsPage({ params, searchParams }: PageProps)
 
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true },
+    select: { id: true, profileCompleted: true },
   });
 
   if (!dbUser) {
     redirect("/auth/login");
+  }
+
+  if (!dbUser.profileCompleted) {
+    const returnTo = eventId
+      ? `/clubs/${clubId}/approvals?eventId=${eventId}`
+      : `/clubs/${clubId}/approvals`;
+    redirect(`/profile?returnTo=${encodeURIComponent(returnTo)}`);
   }
 
   const club = await prisma.club.findUnique({

@@ -25,11 +25,15 @@ export default async function MembersPage({ params }: PageProps) {
   // Get current user
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true },
+    select: { id: true, profileCompleted: true },
   });
 
   if (!dbUser) {
     redirect("/auth/login");
+  }
+
+  if (!dbUser.profileCompleted) {
+    redirect(`/profile?returnTo=${encodeURIComponent(`/clubs/${clubId}/members`)}`);
   }
 
   // Fetch club

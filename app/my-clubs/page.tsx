@@ -13,11 +13,15 @@ export default async function MyClubsPage() {
 
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true, stripeConnectStatus: true },
+    select: { id: true, stripeConnectStatus: true, profileCompleted: true },
   });
 
   if (!dbUser) {
     redirect("/auth/login");
+  }
+
+  if (!dbUser.profileCompleted) {
+    redirect(`/profile?returnTo=${encodeURIComponent("/my-clubs")}`);
   }
 
   const [organizingClubs, memberMemberships] = await Promise.all([
