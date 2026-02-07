@@ -4,6 +4,7 @@ import { createEventSchema } from "@/lib/validations/event";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 import { naiveDateTimeToUTC } from "@/lib/timezone";
 import { RESERVED_RSVP_STATUSES } from "@/lib/event-capacity";
+import { createEventProduct } from "@/lib/stripe";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -98,7 +99,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true },
+    select: { id: true, stripeConnectAccountId: true, stripeConnectChargesEnabled: true },
   });
 
   if (!dbUser) {
@@ -136,6 +137,25 @@ export async function POST(request: Request, context: RouteContext) {
   const priceCents = data.price ? Math.round(data.price * 100) : null;
 
   try {
+    let stripeProductId: string | null = null;
+    let stripePriceId: string | null = null;
+
+    if (priceCents && priceCents > 0) {
+      if (!dbUser.stripeConnectAccountId || !dbUser.stripeConnectChargesEnabled) {
+        return jsonError(
+          "Configure sua conta Stripe Connect antes de criar eventos pagos",
+          400
+        );
+      }
+
+      const { product, price } = await createEventProduct(
+        data.title,
+        priceCents
+      );
+      stripeProductId = product.id;
+      stripePriceId = price.id;
+    }
+
     const event = await prisma.event.create({
       data: {
         clubId,
@@ -147,6 +167,8 @@ export async function POST(request: Request, context: RouteContext) {
         locationValue: data.locationValue,
         createdById: dbUser.id,
         priceCents,
+        stripeProductId,
+        stripePriceId,
         requiresApproval: data.requiresApproval ?? false,
         maxCapacity: data.maxCapacity ?? null,
       },

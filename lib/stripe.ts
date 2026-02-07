@@ -243,6 +243,21 @@ export async function updateEventPrice(
 }
 
 /**
+ * Create a new price for an existing event product.
+ */
+export async function createEventPrice(
+  productId: string,
+  priceCents: number,
+  currency = "brl"
+): Promise<Stripe.Price> {
+  return stripe.prices.create({
+    product: productId,
+    unit_amount: priceCents,
+    currency,
+  });
+}
+
+/**
  * Create checkout session for event payment (mode: "payment").
  * NOTE: Different from club checkout which uses mode: "subscription"
  */

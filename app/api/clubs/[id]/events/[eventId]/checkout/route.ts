@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
-import { getOrCreateCustomer, createEventCheckoutSession } from "@/lib/stripe";
+import {
+  getOrCreateCustomer,
+  createEventCheckoutSession,
+  createEventProduct,
+  createEventPrice,
+} from "@/lib/stripe";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -40,6 +45,7 @@ export async function POST(_request: Request, context: RouteContext) {
       id: true,
       title: true,
       priceCents: true,
+      stripeProductId: true,
       stripePriceId: true,
       club: {
         select: {
@@ -59,7 +65,7 @@ export async function POST(_request: Request, context: RouteContext) {
     return jsonError("Evento não encontrado", 404);
   }
 
-  if (!event.priceCents || event.priceCents <= 0 || !event.stripePriceId) {
+  if (!event.priceCents || event.priceCents <= 0) {
     return jsonError("Este evento é gratuito", 400);
   }
 
@@ -88,6 +94,49 @@ export async function POST(_request: Request, context: RouteContext) {
     );
   }
 
+  let stripePriceId = event.stripePriceId;
+  let stripeProductId = event.stripeProductId;
+
+  if (!stripePriceId) {
+    if (
+      !event.club.organizer.stripeConnectChargesEnabled ||
+      !event.club.organizer.stripeConnectAccountId
+    ) {
+      return jsonError("Pagamentos não configurados para este evento", 400);
+    }
+
+    try {
+      if (stripeProductId) {
+        const newPrice = await createEventPrice(
+          stripeProductId,
+          event.priceCents
+        );
+        stripePriceId = newPrice.id;
+      } else {
+        const { product, price } = await createEventProduct(
+          event.title,
+          event.priceCents
+        );
+        stripeProductId = product.id;
+        stripePriceId = price.id;
+      }
+
+      await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          stripeProductId,
+          stripePriceId,
+        },
+      });
+    } catch (error) {
+      console.error("Falha ao configurar preço do evento:", error);
+      return jsonError("Falha ao configurar preço do evento", 500);
+    }
+  }
+  if (!stripePriceId) {
+    return jsonError("Preço do evento não configurado", 500);
+  }
+
   try {
     // Get or create Stripe customer
     const customerId = await getOrCreateCustomer(
@@ -111,7 +160,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const checkoutSession = await createEventCheckoutSession({
       customerId,
-      priceId: event.stripePriceId,
+      priceId: stripePriceId,
       eventId,
       userId: dbUser.id,
       clubId,

@@ -4,6 +4,11 @@ import { updateEventSchema } from "@/lib/validations/event";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 import { naiveDateTimeToUTC } from "@/lib/timezone";
 import { RESERVED_RSVP_STATUSES } from "@/lib/event-capacity";
+import {
+  createEventProduct,
+  createEventPrice,
+  updateEventPrice,
+} from "@/lib/stripe";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -35,7 +40,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const dbUser = await prisma.user.findUnique({
     where: { auth0Id: session.user.sub },
-    select: { id: true },
+    select: { id: true, stripeConnectAccountId: true, stripeConnectChargesEnabled: true },
   });
 
   if (!dbUser) {
@@ -114,16 +119,37 @@ export async function PATCH(request: Request, context: RouteContext) {
   const maxCapacity = data.maxCapacity;
 
   try {
+    const needsExistingEvent =
+      (data.startsAt !== undefined && data.timezone === undefined) ||
+      priceCents !== undefined;
+
+    const existingEvent = needsExistingEvent
+      ? await prisma.event.findFirst({
+          where: { id: eventId, clubId },
+          select: {
+            title: true,
+            timezone: true,
+            priceCents: true,
+            stripeProductId: true,
+            stripePriceId: true,
+            rsvps: {
+              where: { status: "going" },
+              select: { id: true },
+            },
+          },
+        })
+      : null;
+
+    if (needsExistingEvent && !existingEvent) {
+      return jsonError("Evento não encontrado", 404);
+    }
+
     // If startsAt is being updated, resolve the timezone for conversion
     let startsAtUTC: Date | undefined;
     if (data.startsAt !== undefined) {
       let tz = data.timezone;
       if (!tz) {
-        const existing = await prisma.event.findUnique({
-          where: { id: eventId },
-          select: { timezone: true },
-        });
-        tz = existing?.timezone;
+        tz = existingEvent?.timezone;
       }
       if (!tz) {
         return jsonError("Fuso horário obrigatório ao alterar a data", 400);
@@ -147,6 +173,59 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
     }
 
+    let stripeProductId: string | null | undefined;
+    let stripePriceId: string | null | undefined;
+
+    if (priceCents !== undefined) {
+      const currentPriceCents = existingEvent?.priceCents ?? null;
+      const priceChanged = priceCents !== currentPriceCents;
+
+      if (priceChanged && existingEvent?.rsvps?.length) {
+        return jsonError(
+          "Não é possível alterar o preço depois de RSVPs confirmados",
+          400
+        );
+      }
+
+      if (!priceCents || priceCents === 0) {
+        stripeProductId = null;
+        stripePriceId = null;
+      } else {
+        if (!dbUser.stripeConnectAccountId || !dbUser.stripeConnectChargesEnabled) {
+          return jsonError(
+            "Configure sua conta Stripe Connect antes de criar eventos pagos",
+            400
+          );
+        }
+
+        if (existingEvent?.stripeProductId && existingEvent?.stripePriceId) {
+          if (priceChanged) {
+            const newPrice = await updateEventPrice(
+              existingEvent.stripeProductId,
+              existingEvent.stripePriceId,
+              priceCents
+            );
+            stripeProductId = existingEvent.stripeProductId;
+            stripePriceId = newPrice.id;
+          }
+        } else if (existingEvent?.stripeProductId) {
+          const newPrice = await createEventPrice(
+            existingEvent.stripeProductId,
+            priceCents
+          );
+          stripeProductId = existingEvent.stripeProductId;
+          stripePriceId = newPrice.id;
+        } else {
+          const { product, price } = await createEventProduct(
+            data.title ?? existingEvent?.title ?? "Evento",
+            priceCents
+          );
+          stripeProductId = product.id;
+          stripePriceId = price.id;
+        }
+      }
+    }
+
     const event = await prisma.event.update({
       where: { id: eventId, clubId },
       data: {
@@ -157,6 +236,8 @@ export async function PATCH(request: Request, context: RouteContext) {
         ...(data.locationType !== undefined && { locationType: data.locationType }),
         ...(data.locationValue !== undefined && { locationValue: data.locationValue }),
         ...(priceCents !== undefined && { priceCents }),
+        ...(stripeProductId !== undefined && { stripeProductId }),
+        ...(stripePriceId !== undefined && { stripePriceId }),
         ...(data.requiresApproval !== undefined && { requiresApproval: data.requiresApproval }),
         ...(maxCapacity !== undefined && { maxCapacity }),
       },
