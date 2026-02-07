@@ -28,6 +28,7 @@ import { EventRsvpButtons } from "@/components/event-rsvp-buttons";
 import { CalendarDays, Clock, MapPin, Settings, Users, Video, CheckCircle, XCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { isReservedStatus } from "@/lib/event-capacity";
+import { getRsvpStatusBadge } from "@/lib/event-rsvp-ui";
 
 type EventCreator = {
   id: string;
@@ -161,6 +162,7 @@ export function EventDetailDrawer({
     event.maxCapacity !== null &&
     event.maxCapacity !== undefined &&
     reservedCount >= event.maxCapacity;
+  const statusBadge = getRsvpStatusBadge(currentRsvpStatus);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -230,6 +232,11 @@ export function EventDetailDrawer({
 
             {/* Price and Approval Badges */}
             <div className="flex gap-2 flex-wrap">
+              {statusBadge && (
+                <Badge variant={statusBadge.variant}>
+                  {statusBadge.label}
+                </Badge>
+              )}
               {event.priceCents && event.priceCents > 0 && (
                 <Badge variant="secondary">
                   {formatCurrency(event.priceCents)}

@@ -108,8 +108,35 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     type RsvpClient = Pick<typeof prisma, "eventRsvp">;
+    const approvalLockStatuses = new Set([
+      "pending_approval",
+      "going",
+      "approved_pending_payment",
+      "payment_failed",
+    ]);
 
-    const upsertGoing = async (client: RsvpClient) => {
+    const buildApprovalResponse = (rsvp: { status: string }) => ({
+      rsvp,
+      requiresApproval: true,
+      ...(isPaidEvent ? { requiresPayment: true } : {}),
+    });
+
+    const upsertGoing = async (
+      client: RsvpClient,
+      existingRsvp?: { status: string } | null
+    ) => {
+      if (needsApproval) {
+        const existing =
+          existingRsvp ??
+          (await client.eventRsvp.findUnique({
+            where: { eventId_userId: { eventId, userId: dbUser.id } },
+          }));
+
+        if (existing && approvalLockStatuses.has(existing.status)) {
+          return buildApprovalResponse(existing);
+        }
+      }
+
       if (needsApproval && isPaidEvent) {
         const rsvp = await client.eventRsvp.upsert({
           where: { eventId_userId: { eventId, userId: dbUser.id } },
@@ -202,8 +229,10 @@ export async function POST(request: Request, context: RouteContext) {
       const result = await prisma.$transaction(async (tx) => {
         const existing = await tx.eventRsvp.findUnique({
           where: { eventId_userId: { eventId, userId: dbUser.id } },
-          select: { status: true },
         });
+        if (needsApproval && existing && approvalLockStatuses.has(existing.status)) {
+          return { data: buildApprovalResponse(existing) };
+        }
         const hasReserved = isReservedStatus(existing?.status ?? null);
 
         if (!hasReserved) {
@@ -219,7 +248,7 @@ export async function POST(request: Request, context: RouteContext) {
           }
         }
 
-        return { data: await upsertGoing(tx) };
+        return { data: await upsertGoing(tx, existing) };
       });
 
       if ("error" in result) {

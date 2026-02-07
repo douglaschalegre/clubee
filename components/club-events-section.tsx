@@ -20,6 +20,7 @@ import {
   type DrawerEvent,
 } from "@/components/event-detail-drawer";
 import { CalendarDays, MapPin, Plus, Users, Video } from "lucide-react";
+import { getRsvpStatusBadge } from "@/lib/event-rsvp-ui";
 
 type EventCreator = {
   id: string;
@@ -219,6 +220,7 @@ export function ClubEventsSection({
                 .slice(0, 2)
                 .join("")
                 .toUpperCase();
+              const statusBadge = getRsvpStatusBadge(event.rsvpStatus ?? null);
 
               return (
                 <div key={event.id} className="relative pl-14">
@@ -234,6 +236,13 @@ export function ClubEventsSection({
                   >
                     {event.title}
                   </h3>
+                  {statusBadge && (
+                    <div className="mt-2">
+                      <Badge variant={statusBadge.variant}>
+                        {statusBadge.label}
+                      </Badge>
+                    </div>
+                  )}
 
                   <div className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
                     {/* Creator */}

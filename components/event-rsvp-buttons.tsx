@@ -57,18 +57,39 @@ export function EventRsvpButtons({
     maxCapacity !== undefined &&
     reservedCount >= maxCapacity;
   const hasReserved = isReservedStatus(status);
-  const goingDisabled = isUpdating || isPendingPayment || (isFull && !hasReserved);
+  const isPendingApproval = status === "pending_approval";
+  const isApprovalConfirmed = requiresApproval && status === "going";
+  const goingDisabled =
+    isUpdating ||
+    isPendingPayment ||
+    isPendingApproval ||
+    isApprovalConfirmed ||
+    (isFull && !hasReserved);
 
   const goingLabel = useMemo(() => {
-    if (requiresApproval && isPaidEvent) {
+    if (status === "pending_approval") {
+      return "Aguardando aprovação";
+    }
+    if (status === "going") {
+      return "Confirmado";
+    }
+    if (status === "approved_pending_payment") {
+      return "Aprovado";
+    }
+    if (status === "rejected") {
+      return "Solicitar novamente";
+    }
+    if (status === "payment_failed") {
+      return "Pagamento falhou";
+    }
+    if (requiresApproval) {
       return "Solicitar participação";
-    } else if (requiresApproval) {
-      return "Solicitar participação";
-    } else if (isPaidEvent) {
+    }
+    if (isPaidEvent) {
       return "Participar e pagar";
     }
     return "Vou";
-  }, [requiresApproval, isPaidEvent]);
+  }, [requiresApproval, isPaidEvent, status]);
 
   async function updateRsvp(nextStatus: "going" | "not_going") {
     setIsUpdating(true);
