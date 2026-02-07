@@ -69,6 +69,8 @@ export default async function JoinClubPage({ params }: PageProps) {
     redirect(`/clubs/${id}`);
   }
 
+  const requiresPayment = (club.membershipPriceCents ?? 0) > 0;
+
   return (
     <div className="mx-auto max-w-lg">
       <Breadcrumb
@@ -126,12 +128,16 @@ export default async function JoinClubPage({ params }: PageProps) {
                   <CreditCard className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <div className="font-semibold">Assinatura de membresia</div>
+                  <div className="font-semibold">
+                    {requiresPayment ? "Assinatura de membresia" : "Membresia gratuita"}
+                  </div>
                   <div className="text-sm text-muted-foreground">
-                    Pagamento seguro via Stripe
+                    {requiresPayment
+                      ? "Pagamento seguro via Stripe"
+                      : "Sem necessidade de pagamento"}
                   </div>
                 </div>
-                {club.membershipPriceCents && (
+                {requiresPayment && club.membershipPriceCents && (
                   <div className="text-right">
                     <div className="text-lg font-bold">
                       {(club.membershipPriceCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
@@ -148,14 +154,23 @@ export default async function JoinClubPage({ params }: PageProps) {
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <span>Acesso completo ao conteúdo do clube e aos membros</span>
               </div>
-              <div className="flex items-start gap-3 text-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span>Cancele quando quiser, sem compromisso</span>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-muted-foreground">Seus dados de pagamento são processados com segurança pelo Stripe</span>
-              </div>
+              {requiresPayment ? (
+                <>
+                  <div className="flex items-start gap-3 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span>Cancele quando quiser, sem compromisso</span>
+                  </div>
+                  <div className="flex items-start gap-3 text-sm">
+                    <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-muted-foreground">Seus dados de pagamento são processados com segurança pelo Stripe</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-start gap-3 text-sm">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>Sem cobrança — participe gratuitamente</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -166,9 +181,12 @@ export default async function JoinClubPage({ params }: PageProps) {
           <div className="space-y-3">
             <JoinButton
               clubId={id}
+              requiresPayment={requiresPayment}
               canAcceptPayments={
-                club.organizer.stripeConnectStatus === "active" &&
-                !!club.stripePriceId
+                requiresPayment
+                  ? club.organizer.stripeConnectStatus === "active" &&
+                    !!club.stripePriceId
+                  : true
               }
               priceCents={club.membershipPriceCents}
             />

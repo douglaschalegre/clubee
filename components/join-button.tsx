@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 interface JoinButtonProps {
   clubId: string;
+  requiresPayment: boolean;
   canAcceptPayments?: boolean;
   priceCents?: number | null;
 }
@@ -20,6 +21,7 @@ function formatCurrency(cents: number): string {
 
 export function JoinButton({
   clubId,
+  requiresPayment,
   canAcceptPayments = true,
   priceCents,
 }: JoinButtonProps) {
@@ -29,12 +31,17 @@ export function JoinButton({
     setIsJoining(true);
 
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const endpoint = requiresPayment
+        ? "/api/stripe/checkout"
+        : `/api/clubs/${clubId}/join`;
+      const res = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ clubId }),
+        headers: requiresPayment
+          ? {
+              "Content-Type": "application/json",
+            }
+          : undefined,
+        body: requiresPayment ? JSON.stringify({ clubId }) : undefined,
       });
 
       // Check if response has content
@@ -51,14 +58,24 @@ export function JoinButton({
       }
 
       if (!res.ok) {
-        throw new Error(data.error || "Falha ao criar a sessão de checkout");
+        throw new Error(
+          data.error ||
+            (requiresPayment
+              ? "Falha ao criar a sessão de checkout"
+              : "Falha ao entrar no clube")
+        );
       }
 
-      if (data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.url;
+      if (requiresPayment) {
+        if (data.url) {
+          // Redirect to Stripe checkout
+          window.location.href = data.url;
+        } else {
+          throw new Error("Nenhuma URL de checkout retornada");
+        }
       } else {
-        throw new Error("Nenhuma URL de checkout retornada");
+        // Free club: membership created, go to club page
+        window.location.href = `/clubs/${clubId}`;
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Algo deu errado");
@@ -66,7 +83,7 @@ export function JoinButton({
     }
   }
 
-  if (!canAcceptPayments) {
+  if (requiresPayment && !canAcceptPayments) {
     return (
       <Button
         disabled
@@ -79,9 +96,11 @@ export function JoinButton({
     );
   }
 
-  const label = priceCents
-    ? `Entrar no clube - ${formatCurrency(priceCents)}/mês`
-    : "Entrar no clube - Assinar";
+  const label = requiresPayment
+    ? priceCents
+      ? `Entrar no clube - ${formatCurrency(priceCents)}/mês`
+      : "Entrar no clube - Assinar"
+    : "Entrar no clube";
 
   return (
     <div>
@@ -94,7 +113,9 @@ export function JoinButton({
         {isJoining ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Redirecionando para o pagamento...
+            {requiresPayment
+              ? "Redirecionando para o pagamento..."
+              : "Entrando no clube..."}
           </>
         ) : (
           <>
