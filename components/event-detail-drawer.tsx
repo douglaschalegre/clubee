@@ -233,7 +233,11 @@ export function EventDetailDrawer({
             {/* Price and Approval Badges */}
             <div className="flex gap-2 flex-wrap">
               {statusBadge && (
-                <Badge variant={statusBadge.variant}>
+                <Badge
+                  variant={statusBadge.variant}
+                  className={statusBadge.className}
+                >
+                  <statusBadge.icon />
                   {statusBadge.label}
                 </Badge>
               )}

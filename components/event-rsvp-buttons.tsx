@@ -48,6 +48,7 @@ export function EventRsvpButtons({
   const [copied, setCopied] = useState(false);
 
   const isPaidEvent = priceCents && priceCents > 0;
+  const hideRsvpToggle = isPaidEvent && status === "going";
   const isPendingPayment =
     status === "pending_payment" ||
     status === "approved_pending_payment" ||
@@ -231,7 +232,7 @@ export function EventRsvpButtons({
       )}
       <div className="flex items-center gap-2">
         {/* RSVP toggle */}
-        {!isOrganizer && (
+        {!isOrganizer && !hideRsvpToggle && (
           <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
             <button
               type="button"

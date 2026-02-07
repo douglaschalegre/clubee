@@ -238,7 +238,11 @@ export function ClubEventsSection({
                   </h3>
                   {statusBadge && (
                     <div className="mt-2">
-                      <Badge variant={statusBadge.variant}>
+                      <Badge
+                        variant={statusBadge.variant}
+                        className={statusBadge.className}
+                      >
+                        <statusBadge.icon />
                         {statusBadge.label}
                       </Badge>
                     </div>
