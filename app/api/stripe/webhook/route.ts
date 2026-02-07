@@ -36,10 +36,58 @@ export async function POST(request: Request) {
         const sessionType = session.metadata?.type;
 
         if (sessionType === "event_payment") {
-          await handleEventPaymentCompleted(session);
+          if (session.payment_status === "paid") {
+            await handleEventPaymentCompleted(
+              session,
+              "checkout.session.completed"
+            );
+          } else {
+            console.log(
+              `Event payment session completed but not paid yet: ${session.id}`
+            );
+          }
         } else {
           // Existing club membership logic
           await handleCheckoutSessionCompleted(session);
+        }
+        break;
+      }
+
+      case "checkout.session.async_payment_succeeded": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const sessionType = session.metadata?.type;
+
+        if (sessionType === "event_payment") {
+          await handleEventPaymentCompleted(
+            session,
+            "checkout.session.async_payment_succeeded"
+          );
+        }
+        break;
+      }
+
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const sessionType = session.metadata?.type;
+
+        if (sessionType === "event_payment") {
+          await handleEventPaymentFailedFromSession(
+            session,
+            "checkout.session.async_payment_failed"
+          );
+        }
+        break;
+      }
+
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const intentType = paymentIntent.metadata?.type;
+
+        if (intentType === "event_payment") {
+          await handleEventPaymentSucceeded(
+            paymentIntent,
+            "payment_intent.succeeded"
+          );
         }
         break;
       }
@@ -49,7 +97,10 @@ export async function POST(request: Request) {
         const intentType = paymentIntent.metadata?.type;
 
         if (intentType === "event_payment") {
-          await handleEventPaymentFailed(paymentIntent);
+          await handleEventPaymentFailed(
+            paymentIntent,
+            "payment_intent.payment_failed"
+          );
         }
         break;
       }
@@ -316,50 +367,156 @@ async function handleAccountDeauthorized(accountId: string) {
 /**
  * Handle event payment completion - update RSVP to "going".
  */
-async function handleEventPaymentCompleted(session: Stripe.Checkout.Session) {
+async function handleEventPaymentCompleted(
+  session: Stripe.Checkout.Session,
+  source: string
+) {
   const { eventId, userId } = session.metadata || {};
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id;
+  const amountPaid =
+    typeof session.amount_total === "number" ? session.amount_total : undefined;
 
+  await markEventPaymentSucceeded({
+    eventId,
+    userId,
+    checkoutSessionId: session.id,
+    paymentIntentId,
+    amountPaid,
+    source,
+  });
+}
+
+/**
+ * Handle event payment failure - update RSVP to "payment_failed".
+ */
+async function handleEventPaymentFailed(
+  paymentIntent: Stripe.PaymentIntent,
+  source: string
+) {
+  const { eventId, userId } = paymentIntent.metadata || {};
+
+  await markEventPaymentFailed({ eventId, userId, source });
+}
+
+async function handleEventPaymentSucceeded(
+  paymentIntent: Stripe.PaymentIntent,
+  source: string
+) {
+  const { eventId, userId } = paymentIntent.metadata || {};
+  const amountPaid =
+    typeof paymentIntent.amount_received === "number" &&
+    paymentIntent.amount_received > 0
+      ? paymentIntent.amount_received
+      : paymentIntent.amount;
+
+  await markEventPaymentSucceeded({
+    eventId,
+    userId,
+    paymentIntentId: paymentIntent.id,
+    amountPaid,
+    source,
+  });
+}
+
+async function handleEventPaymentFailedFromSession(
+  session: Stripe.Checkout.Session,
+  source: string
+) {
+  const { eventId, userId } = session.metadata || {};
+  await markEventPaymentFailed({ eventId, userId, source });
+}
+
+async function markEventPaymentSucceeded({
+  eventId,
+  userId,
+  checkoutSessionId,
+  paymentIntentId,
+  amountPaid,
+  source,
+}: {
+  eventId?: string;
+  userId?: string;
+  checkoutSessionId?: string | null;
+  paymentIntentId?: string | null;
+  amountPaid?: number;
+  source: string;
+}) {
   if (!eventId || !userId) {
-    console.error("Missing metadata in event payment session:", session.id);
+    console.error("Missing metadata for event payment success:", {
+      eventId,
+      userId,
+      source,
+    });
     return;
   }
 
-  const paymentIntentId = session.payment_intent as string;
-  const amountPaid = session.amount_total;
+  const data: {
+    status: "going";
+    paidAt: Date;
+    stripeCheckoutSessionId?: string;
+    stripePaymentIntentId?: string;
+    paidAmountCents?: number;
+  } = {
+    status: "going",
+    paidAt: new Date(),
+  };
+
+  if (checkoutSessionId) {
+    data.stripeCheckoutSessionId = checkoutSessionId;
+  }
+  if (paymentIntentId) {
+    data.stripePaymentIntentId = paymentIntentId;
+  }
+  if (typeof amountPaid === "number") {
+    data.paidAmountCents = amountPaid;
+  }
 
   try {
-    await prisma.eventRsvp.update({
-      where: { eventId_userId: { eventId, userId } },
-      data: {
-        status: "going",
-        stripeCheckoutSessionId: session.id,
-        stripePaymentIntentId: paymentIntentId,
-        paidAt: new Date(),
-        paidAmountCents: amountPaid,
-      },
+    const result = await prisma.eventRsvp.updateMany({
+      where: { eventId, userId },
+      data,
     });
 
+    if (result.count === 0) {
+      console.error("No RSVP updated after event payment success:", {
+        eventId,
+        userId,
+        source,
+      });
+      return;
+    }
+
     console.log(
-      `Event payment completed for user ${userId}, event ${eventId}, amount: ${amountPaid}`
+      `Event payment recorded for user ${userId}, event ${eventId}, source: ${source}`
     );
   } catch (error) {
     console.error("Failed to update RSVP after event payment:", error);
   }
 }
 
-/**
- * Handle event payment failure - update RSVP to "payment_failed".
- */
-async function handleEventPaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  const { eventId, userId } = paymentIntent.metadata || {};
-
+async function markEventPaymentFailed({
+  eventId,
+  userId,
+  source,
+}: {
+  eventId?: string;
+  userId?: string;
+  source: string;
+}) {
   if (!eventId || !userId) {
-    console.log("Missing metadata in event payment intent:", paymentIntent.id);
+    console.error("Missing metadata for event payment failure:", {
+      eventId,
+      userId,
+      source,
+    });
     return;
   }
 
   try {
-    await prisma.eventRsvp.updateMany({
+    const result = await prisma.eventRsvp.updateMany({
       where: {
         eventId,
         userId,
@@ -368,9 +525,16 @@ async function handleEventPaymentFailed(paymentIntent: Stripe.PaymentIntent) {
       data: { status: "payment_failed" },
     });
 
-    console.log(
-      `Event payment failed for user ${userId}, event ${eventId}`
-    );
+    if (result.count === 0) {
+      console.error("No RSVP updated after event payment failure:", {
+        eventId,
+        userId,
+        source,
+      });
+      return;
+    }
+
+    console.log(`Event payment failed for user ${userId}, event ${eventId}`);
   } catch (error) {
     console.error("Failed to update RSVP after payment failure:", error);
   }

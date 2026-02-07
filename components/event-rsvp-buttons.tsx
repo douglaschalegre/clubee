@@ -70,11 +70,14 @@ export function EventRsvpButtons({
     if (status === "pending_approval") {
       return "Aguardando aprovação";
     }
+    if (status === "pending_payment") {
+      return "Pagamento pendente";
+    }
     if (status === "going") {
-      return "Confirmado";
+      return "Inscrição confirmada";
     }
     if (status === "approved_pending_payment") {
-      return "Aprovado";
+      return "Pagamento pendente";
     }
     if (status === "rejected") {
       return "Solicitar novamente";

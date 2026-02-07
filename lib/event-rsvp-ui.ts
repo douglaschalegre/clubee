@@ -22,9 +22,9 @@ export function getRsvpStatusBadge(
     case "pending_payment":
       return { label: "Pagamento pendente", variant: "secondary" };
     case "approved_pending_payment":
-      return { label: "Aprovado", variant: "secondary" };
+      return { label: "Pagamento pendente", variant: "secondary" };
     case "going":
-      return { label: "Confirmado", variant: "outline" };
+      return { label: "Inscrição confirmada", variant: "outline" };
     case "rejected":
       return { label: "Solicitação negada", variant: "destructive" };
     case "payment_failed":

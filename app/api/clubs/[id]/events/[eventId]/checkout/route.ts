@@ -155,7 +155,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     // Create checkout session
     const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
-    const successUrl = `${baseUrl}/clubs/${clubId}?eventId=${eventId}`;
+    const successUrl = `${baseUrl}/api/stripe/events/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/clubs/${clubId}?eventId=${eventId}`;
 
     const checkoutSession = await createEventCheckoutSession({
