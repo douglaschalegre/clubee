@@ -6,11 +6,21 @@ import {
   jsonSuccess,
 } from "@/lib/api-utils";
 import { profileSchema } from "@/lib/validations/profile";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function PATCH(request: Request) {
   const authResult = await requireAuth();
   if (isErrorResponse(authResult)) {
     return authResult;
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: authResult.user.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   let body: unknown;

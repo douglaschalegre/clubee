@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   requireAuth,
@@ -7,6 +6,8 @@ import {
   jsonSuccess,
 } from "@/lib/api-utils";
 import { createClubSchema } from "@/lib/validations/club";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 /**
  * GET /api/clubs
@@ -43,6 +44,15 @@ export async function POST(request: Request) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   // Parse and validate body
   let body: unknown;
@@ -89,6 +99,17 @@ export async function POST(request: Request) {
       });
 
       return newClub;
+    });
+
+    await logAuditEvent({
+      actorId: user.id,
+      action: "club.create",
+      targetType: "club",
+      targetId: club.id,
+      metadata: {
+        membershipPriceCents,
+      },
+      request,
     });
 
     return jsonSuccess({ club }, 201);

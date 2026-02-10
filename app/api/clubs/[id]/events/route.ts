@@ -5,6 +5,8 @@ import { jsonError, jsonSuccess } from "@/lib/api-utils";
 import { naiveDateTimeToUTC } from "@/lib/timezone";
 import { RESERVED_RSVP_STATUSES } from "@/lib/event-capacity";
 import { createEventProduct } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -106,6 +108,15 @@ export async function POST(request: Request, context: RouteContext) {
     return jsonError("Não autorizado", 401);
   }
 
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const club = await prisma.club.findUnique({
     where: { id: clubId },
     select: { organizerId: true },
@@ -172,6 +183,20 @@ export async function POST(request: Request, context: RouteContext) {
         requiresApproval: data.requiresApproval ?? false,
         maxCapacity: data.maxCapacity ?? null,
       },
+    });
+
+    await logAuditEvent({
+      actorId: dbUser.id,
+      action: "event.create",
+      targetType: "event",
+      targetId: event.id,
+      metadata: {
+        clubId,
+        priceCents,
+        requiresApproval: data.requiresApproval ?? false,
+        maxCapacity: data.maxCapacity ?? null,
+      },
+      request,
     });
 
     return jsonSuccess({ event }, 201);

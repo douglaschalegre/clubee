@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { stripe } from "@/lib/stripe";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -22,6 +24,15 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Nao autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   // Verify club and current ownership
@@ -106,6 +117,17 @@ export async function POST(request: Request, context: RouteContext) {
         },
       }),
     ]);
+
+    await logAuditEvent({
+      actorId: dbUser.id,
+      action: "club.transfer_ownership",
+      targetType: "club",
+      targetId: clubId,
+      metadata: {
+        newOwnerUserId,
+      },
+      request,
+    });
 
     return jsonSuccess({ transferred: true });
   } catch (error) {

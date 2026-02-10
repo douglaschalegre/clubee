@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -11,7 +12,7 @@ interface RouteContext {
  * Allows direct join for free clubs (no payment required).
  * For paid clubs, use the Stripe checkout endpoint instead.
  */
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   const { id: clubId } = await context.params;
   const session = await auth0.getSession();
 
@@ -26,6 +27,15 @@ export async function POST(_request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   // Get club and verify it's free

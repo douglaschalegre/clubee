@@ -7,6 +7,8 @@ import {
   jsonSuccess,
 } from "@/lib/api-utils";
 import { createClubProduct, updateClubPrice } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -25,6 +27,15 @@ export async function POST(request: Request, context: RouteContext) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   const orgCheck = await requireOrganizer(user.id, clubId);
   if (isErrorResponse(orgCheck)) {
@@ -92,6 +103,17 @@ export async function POST(request: Request, context: RouteContext) {
         },
       });
 
+      await logAuditEvent({
+        actorId: user.id,
+        action: "club.pricing_update",
+        targetType: "club",
+        targetId: clubId,
+        metadata: {
+          membershipPriceCents: null,
+        },
+        request,
+      });
+
       return jsonSuccess({
         message: "Clube definido como gratuito",
         membershipPriceCents: null,
@@ -125,6 +147,17 @@ export async function POST(request: Request, context: RouteContext) {
         stripeProductId,
         membershipPriceCents: priceCents,
       },
+    });
+
+    await logAuditEvent({
+      actorId: user.id,
+      action: "club.pricing_update",
+      targetType: "club",
+      targetId: clubId,
+      metadata: {
+        membershipPriceCents: priceCents,
+      },
+      request,
     });
 
     return jsonSuccess({

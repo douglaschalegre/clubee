@@ -5,6 +5,8 @@ import {
   jsonError,
 } from "@/lib/api-utils";
 import { createCheckoutSession, getOrCreateCustomer } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getAppBaseUrl } from "@/lib/urls";
 
 /**
  * POST /api/stripe/checkout
@@ -18,6 +20,15 @@ export async function POST(request: Request) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 20,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   // Parse request body
   let clubId: string;
@@ -90,7 +101,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
   const successUrl = `${baseUrl}/api/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${baseUrl}/clubs/${clubId}`;
 

@@ -9,6 +9,8 @@ import {
   createEventPrice,
   updateEventPrice,
 } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -87,6 +89,15 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   const club = await prisma.club.findUnique({
@@ -247,6 +258,19 @@ export async function PATCH(request: Request, context: RouteContext) {
       },
     });
 
+    await logAuditEvent({
+      actorId: dbUser.id,
+      action: "event.update",
+      targetType: "event",
+      targetId: eventId,
+      metadata: {
+        clubId,
+        priceCents,
+        maxCapacity,
+      },
+      request,
+    });
+
     return jsonSuccess({ event });
   } catch (error) {
     console.error("Falha ao atualizar evento:", error);
@@ -254,7 +278,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   const { id: clubId, eventId } = await context.params;
   const session = await auth0.getSession();
 
@@ -269,6 +293,15 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   const club = await prisma.club.findUnique({
@@ -287,6 +320,17 @@ export async function DELETE(_request: Request, context: RouteContext) {
   try {
     await prisma.event.delete({
       where: { id: eventId, clubId },
+    });
+
+    await logAuditEvent({
+      actorId: dbUser.id,
+      action: "event.delete",
+      targetType: "event",
+      targetId: eventId,
+      metadata: {
+        clubId,
+      },
+      request,
     });
     return jsonSuccess({ deleted: true });
   } catch (error) {

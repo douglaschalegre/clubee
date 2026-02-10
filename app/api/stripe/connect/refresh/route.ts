@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { getAppBaseUrl } from "@/lib/urls";
 
 /**
  * GET /api/stripe/connect/refresh
  * Stripe redirects here if the account link expired.
  */
 export async function GET(request: Request) {
-  const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
   const { searchParams } = new URL(request.url);
   const clubId = searchParams.get("clubId");
 

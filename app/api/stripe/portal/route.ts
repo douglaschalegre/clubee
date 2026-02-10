@@ -5,6 +5,8 @@ import {
   requireAuth,
 } from "@/lib/api-utils";
 import { getOrCreateCustomer, stripe } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getAppBaseUrl } from "@/lib/urls";
 
 /**
  * POST /api/stripe/portal
@@ -17,6 +19,15 @@ export async function POST(request: Request) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 20,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   let membershipId: string;
   try {
@@ -57,7 +68,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
   const returnUrl = `${baseUrl}/clubs/${membership.club.id}`;
 
   try {

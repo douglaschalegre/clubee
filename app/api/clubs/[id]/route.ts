@@ -8,6 +8,8 @@ import {
 } from "@/lib/api-utils";
 import { updateClubSchema } from "@/lib/validations/club";
 import { stripe } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -63,6 +65,15 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
   const { user } = authResult;
 
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   // Require organizer access
   const orgCheck = await requireOrganizer(user.id, clubId);
   if (isErrorResponse(orgCheck)) {
@@ -94,6 +105,19 @@ export async function PATCH(request: Request, context: RouteContext) {
       },
     });
 
+    await logAuditEvent({
+      actorId: user.id,
+      action: "club.update",
+      targetType: "club",
+      targetId: clubId,
+      metadata: {
+        name,
+        description,
+        imageUrl,
+      },
+      request,
+    });
+
     return jsonSuccess({ club });
   } catch {
     return jsonError("Falha ao atualizar clube", 500);
@@ -104,7 +128,7 @@ export async function PATCH(request: Request, context: RouteContext) {
  * DELETE /api/clubs/[id]
  * Delete club (organizer only). Cascades memberships.
  */
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   const { id: clubId } = await context.params;
 
   // Require authentication
@@ -113,6 +137,15 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   // Require organizer access
   const orgCheck = await requireOrganizer(user.id, clubId);
@@ -145,6 +178,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
     await prisma.club.delete({
       where: { id: clubId },
+    });
+
+    await logAuditEvent({
+      actorId: user.id,
+      action: "club.delete",
+      targetType: "club",
+      targetId: clubId,
+      request,
     });
 
     return jsonSuccess({ deleted: true });

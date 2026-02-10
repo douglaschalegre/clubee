@@ -8,6 +8,8 @@ import {
   createConnectAccount,
   createAccountLink,
 } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getAppBaseUrl } from "@/lib/urls";
 
 /**
  * POST /api/stripe/connect/onboard
@@ -21,6 +23,15 @@ export async function POST(request: Request) {
   }
   const { user } = authResult;
 
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 20,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   let clubId: string | undefined;
   try {
     const body = await request.json();
@@ -29,7 +40,7 @@ export async function POST(request: Request) {
     // No body is fine
   }
 
-  const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
   const callbackParam = clubId ? `?clubId=${clubId}` : "";
   const refreshUrl = `${baseUrl}/api/stripe/connect/refresh${callbackParam}`;
   const returnUrl = `${baseUrl}/api/stripe/connect/return${callbackParam}`;

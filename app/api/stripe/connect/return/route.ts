@@ -3,6 +3,7 @@ import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
 import { getConnectAccount } from "@/lib/stripe";
 import type { StripeConnectStatus } from "@/lib/generated/prisma/client";
+import { getAppBaseUrl } from "@/lib/urls";
 
 /**
  * GET /api/stripe/connect/return
@@ -10,7 +11,7 @@ import type { StripeConnectStatus } from "@/lib/generated/prisma/client";
  */
 export async function GET(request: Request) {
   const session = await auth0.getSession();
-  const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+  const baseUrl = getAppBaseUrl();
   const { searchParams } = new URL(request.url);
   const clubId = searchParams.get("clubId");
 

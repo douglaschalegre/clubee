@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string; userId: string }>;
@@ -10,7 +12,7 @@ interface RouteContext {
  * POST /api/clubs/[id]/events/[eventId]/requests/[userId]/approve
  * Approve a user's request to attend an event (organizer only).
  */
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   const { id: clubId, eventId, userId } = await context.params;
   const session = await auth0.getSession();
 
@@ -25,6 +27,15 @@ export async function POST(_request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 20,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   // Verify user is organizer
@@ -84,6 +95,18 @@ export async function POST(_request: Request, context: RouteContext) {
           },
         },
       },
+    });
+
+    await logAuditEvent({
+      actorId: dbUser.id,
+      action: "event.rsvp_approve",
+      targetType: "event",
+      targetId: eventId,
+      metadata: {
+        clubId,
+        userId,
+      },
+      request,
     });
 
     return jsonSuccess({

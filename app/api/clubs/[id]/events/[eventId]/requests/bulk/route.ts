@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { auth0 } from "@/lib/auth0";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 import { bulkApprovalActionSchema } from "@/lib/validations/event";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -26,6 +28,15 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 20,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   // Verify user is organizer
@@ -81,6 +92,18 @@ export async function POST(request: Request, context: RouteContext) {
         },
       });
 
+      await logAuditEvent({
+        actorId: dbUser.id,
+        action: "event.rsvp_bulk_approve",
+        targetType: "event",
+        targetId: eventId,
+        metadata: {
+          clubId,
+          userIds,
+        },
+        request,
+      });
+
       return jsonSuccess({ updatedCount: result.count, status: "approved" });
     }
 
@@ -97,6 +120,19 @@ export async function POST(request: Request, context: RouteContext) {
         approvedAt: null,
         approvedById: null,
       },
+    });
+
+    await logAuditEvent({
+      actorId: dbUser.id,
+      action: "event.rsvp_bulk_reject",
+      targetType: "event",
+      targetId: eventId,
+      metadata: {
+        clubId,
+        userIds,
+        rejectionReason: rejectionReason || null,
+      },
+      request,
     });
 
     return jsonSuccess({ updatedCount: result.count, status: "rejected" });

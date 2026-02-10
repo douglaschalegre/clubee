@@ -6,6 +6,7 @@ import {
   jsonSuccess,
 } from "@/lib/api-utils";
 import { stripe } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -15,7 +16,7 @@ interface RouteContext {
  * POST /api/clubs/[id]/leave
  * Cancel membership and deactivate access.
  */
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   const { id: clubId } = await context.params;
 
   const authResult = await requireAuth();
@@ -23,6 +24,15 @@ export async function POST(_request: Request, context: RouteContext) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   const club = await prisma.club.findUnique({
     where: { id: clubId },

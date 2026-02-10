@@ -3,6 +3,8 @@ import { auth0 } from "@/lib/auth0";
 import { jsonError, jsonSuccess } from "@/lib/api-utils";
 import { eventPricingSchema } from "@/lib/validations/event";
 import { createEventProduct, updateEventPrice } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -27,6 +29,15 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   // Verify user is organizer
@@ -140,6 +151,18 @@ export async function POST(request: Request, context: RouteContext) {
         stripeProductId: productId,
         stripePriceId: priceId,
       },
+    });
+
+    await logAuditEvent({
+      actorId: dbUser.id,
+      action: "event.pricing_update",
+      targetType: "event",
+      targetId: eventId,
+      metadata: {
+        clubId,
+        priceCents,
+      },
+      request,
     });
 
     return jsonSuccess({

@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Header } from "@/components/header";
 import { Toaster } from "@/components/ui/sonner";
+import { getAppBaseUrl } from "@/lib/urls";
 
 import "./globals.css";
 
-const APP_URL = process.env.APP_BASE_URL || "http://localhost:3000";
+const APP_URL = getAppBaseUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),

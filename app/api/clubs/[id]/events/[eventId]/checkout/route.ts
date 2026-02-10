@@ -7,6 +7,8 @@ import {
   createEventProduct,
   createEventPrice,
 } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getAppBaseUrl } from "@/lib/urls";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -16,7 +18,7 @@ interface RouteContext {
  * POST /api/clubs/[id]/events/[eventId]/checkout
  * Create Stripe checkout session for event payment.
  */
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   const { id: clubId, eventId } = await context.params;
   const session = await auth0.getSession();
 
@@ -36,6 +38,15 @@ export async function POST(_request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 20,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   // Get event with pricing and organizer info
@@ -154,7 +165,7 @@ export async function POST(_request: Request, context: RouteContext) {
     }
 
     // Create checkout session
-    const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+    const baseUrl = getAppBaseUrl();
     const successUrl = `${baseUrl}/api/stripe/events/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/clubs/${clubId}?eventId=${eventId}`;
 

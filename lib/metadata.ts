@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { getAppBaseUrl } from "@/lib/urls";
 
-const APP_URL = process.env.APP_BASE_URL || "http://localhost:3000";
+const APP_URL = getAppBaseUrl();
 
 interface Club {
   id: string;

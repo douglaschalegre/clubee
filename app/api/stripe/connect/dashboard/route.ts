@@ -4,17 +4,27 @@ import {
   jsonError,
 } from "@/lib/api-utils";
 import { createConnectLoginLink } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/stripe/connect/dashboard
  * Create a login link for the user's Stripe Express dashboard.
  */
-export async function POST() {
+export async function POST(request: Request) {
   const authResult = await requireAuth();
   if (isErrorResponse(authResult)) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 20,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   if (!user.stripeConnectAccountId) {
     return jsonError("Conta Stripe Connect não encontrada", 400);

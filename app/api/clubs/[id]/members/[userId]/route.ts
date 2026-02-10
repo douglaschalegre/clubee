@@ -7,6 +7,8 @@ import {
   isClubOrganizer,
 } from "@/lib/api-utils";
 import { stripe } from "@/lib/stripe";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logAuditEvent } from "@/lib/audit";
 
 interface RouteContext {
   params: Promise<{ id: string; userId: string }>;
@@ -16,7 +18,7 @@ interface RouteContext {
  * DELETE /api/clubs/[id]/members/[userId]
  * Remove a member from the club (organizer only).
  */
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   const { id: clubId, userId: targetUserId } = await context.params;
 
   const authResult = await requireAuth();
@@ -24,6 +26,15 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return authResult;
   }
   const { user } = authResult;
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: user.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   // Only organizers can remove members
   const isOrganizer = await isClubOrganizer(user.id, clubId);
@@ -61,6 +72,17 @@ export async function DELETE(_request: Request, context: RouteContext) {
   try {
     await prisma.membership.delete({
       where: { id: membership.id },
+    });
+
+    await logAuditEvent({
+      actorId: user.id,
+      action: "membership.remove",
+      targetType: "club",
+      targetId: clubId,
+      metadata: {
+        targetUserId,
+      },
+      request,
     });
 
     return jsonSuccess({ deleted: true });

@@ -5,6 +5,7 @@ import {
   RESERVED_RSVP_STATUSES,
   isReservedStatus,
 } from "@/lib/event-capacity";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
@@ -25,6 +26,15 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!dbUser) {
     return jsonError("Não autorizado", 401);
+  }
+
+  const rateLimitResponse = checkRateLimit({
+    request,
+    identifier: dbUser.id,
+    limit: 60,
+  });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   // Fetch event with pricing and approval settings
