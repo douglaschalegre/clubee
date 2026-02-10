@@ -20,12 +20,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { EventDeleteButton } from "@/components/event-delete-button";
 import { EventForm } from "@/components/event-form";
 import { EventMapPreview } from "@/components/event-map-preview";
 import { EventRsvpButtons } from "@/components/event-rsvp-buttons";
-import { CalendarDays, Clock, MapPin, Settings, Users, Video, CheckCircle, XCircle } from "lucide-react";
+import { CalendarDays, MapPin, Settings, Users, Video, CheckCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { isReservedStatus } from "@/lib/event-capacity";
 import { getRsvpStatusBadge } from "@/lib/event-rsvp-ui";
@@ -267,56 +266,6 @@ export function EventDetailDrawer({
           </DrawerHeader>
 
           <div className="space-y-5">
-            {/* Status indicators */}
-            {currentRsvpStatus === "pending_approval" && (
-              <Alert>
-                <Clock className="h-4 w-4" />
-                <AlertTitle>Aguardando aprovação</AlertTitle>
-                <AlertDescription>
-                  O organizador revisará sua solicitação em breve.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {currentRsvpStatus === "pending_payment" && (
-              <Alert>
-                <Clock className="h-4 w-4" />
-                <AlertTitle>Pagamento pendente</AlertTitle>
-                <AlertDescription>
-                  Complete o pagamento para confirmar sua presença.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {currentRsvpStatus === "approved_pending_payment" && (
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertTitle>Aprovado! Complete o pagamento</AlertTitle>
-                <AlertDescription>
-                  Sua participação foi aprovada. Complete o pagamento para confirmar.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {currentRsvpStatus === "rejected" && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertTitle>Solicitação negada</AlertTitle>
-                <AlertDescription>
-                  O organizador não aprovou sua participação. Você pode solicitar novamente.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {currentRsvpStatus === "payment_failed" && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertTitle>Pagamento falhou</AlertTitle>
-                <AlertDescription>
-                  Houve um problema com seu pagamento. Tente novamente.
-                </AlertDescription>
-              </Alert>
-            )}
             {/* Metadata row */}
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
               {/* Left: date · time */}
