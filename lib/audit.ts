@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import type { Prisma } from "@/lib/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 
 type AuditLogInput = {
   actorId: string;
@@ -33,6 +33,12 @@ export async function logAuditEvent({
 }: AuditLogInput): Promise<void> {
   const ip = getClientIp(request);
   const userAgent = request?.headers.get("user-agent") || null;
+  const normalizedMetadata =
+    metadata === undefined
+      ? undefined
+      : metadata === null
+        ? Prisma.JsonNull
+        : metadata;
 
   try {
     await prisma.auditLog.create({
@@ -41,7 +47,7 @@ export async function logAuditEvent({
         action,
         targetType,
         targetId: targetId ?? null,
-        metadata: metadata ?? null,
+        metadata: normalizedMetadata,
         ip,
         userAgent,
       },
