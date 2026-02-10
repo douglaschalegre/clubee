@@ -78,35 +78,49 @@ type StatusFilter =
   | "rejected"
   | "not_going";
 
-const STATUS_ORDER: NonNullable<RsvpStatus>[] = [
-  "going",
-  "pending_approval",
-  "approved_pending_payment",
-  "pending_payment",
-  "payment_failed",
-  "rejected",
-  "not_going",
+const DISPLAY_GROUPS: Array<{
+  key: StatusFilter;
+  label: string;
+  statuses: NonNullable<RsvpStatus>[];
+  accent: string;
+}> = [
+  {
+    key: "going",
+    label: "Registrados",
+    statuses: ["going"],
+    accent: "border-emerald-200 bg-emerald-50/70 text-emerald-800",
+  },
+  {
+    key: "pending_approval",
+    label: "Pendentes de aprovação",
+    statuses: ["pending_approval"],
+    accent: "border-slate-200 bg-slate-50/80 text-slate-700",
+  },
+  {
+    key: "pending_payment",
+    label: "Pagamento pendente",
+    statuses: ["pending_payment", "approved_pending_payment"],
+    accent: "border-amber-200 bg-amber-50/80 text-amber-800",
+  },
+  {
+    key: "payment_failed",
+    label: "Pagamento falhou",
+    statuses: ["payment_failed"],
+    accent: "border-rose-200 bg-rose-50/80 text-rose-700",
+  },
+  {
+    key: "rejected",
+    label: "Rejeitados",
+    statuses: ["rejected"],
+    accent: "border-rose-200 bg-rose-50/80 text-rose-700",
+  },
+  {
+    key: "not_going",
+    label: "Não vão",
+    statuses: ["not_going"],
+    accent: "border-zinc-200 bg-zinc-50/80 text-zinc-700",
+  },
 ];
-
-const STATUS_LABELS: Record<NonNullable<RsvpStatus>, string> = {
-  going: "Registrados",
-  pending_approval: "Pendentes de aprovação",
-  approved_pending_payment: "Aprovados · pagamento pendente",
-  pending_payment: "Pagamento pendente",
-  payment_failed: "Pagamento falhou",
-  rejected: "Rejeitados",
-  not_going: "Não vão",
-};
-
-const STATUS_ACCENTS: Record<NonNullable<RsvpStatus>, string> = {
-  going: "border-emerald-200 bg-emerald-50/70 text-emerald-800",
-  pending_approval: "border-slate-200 bg-slate-50/80 text-slate-700",
-  approved_pending_payment: "border-amber-200 bg-amber-50/80 text-amber-800",
-  pending_payment: "border-amber-200 bg-amber-50/80 text-amber-800",
-  payment_failed: "border-rose-200 bg-rose-50/80 text-rose-700",
-  rejected: "border-rose-200 bg-rose-50/80 text-rose-700",
-  not_going: "border-zinc-200 bg-zinc-50/80 text-zinc-700",
-};
 
 const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
   all: "Todos os status",
@@ -198,8 +212,9 @@ export function EventRegistrationsDashboard({
     (statusCounts.approved_pending_payment ?? 0);
   const paymentFailedCount = statusCounts.payment_failed ?? 0;
   const rejectedCount = statusCounts.rejected ?? 0;
-  const notGoingCount = statusCounts.not_going ?? 0;
   const totalCount = rsvps.length;
+  const pendingTotal = pendingApprovalCount + pendingPaymentCount;
+  const hasFilters = searchQuery.length > 0 || statusFilter !== "all";
 
   const reservedCount = rsvps.filter((rsvp) =>
     RESERVED_RSVP_STATUSES.includes(
@@ -210,11 +225,10 @@ export function EventRegistrationsDashboard({
   const eventDate = formatDate(event.startsAt, event.timezone);
   const eventTime = formatTime(event.startsAt, event.timezone);
 
-  const statusGroups = STATUS_ORDER.map((status) => ({
-    status,
-    label: STATUS_LABELS[status],
+  const statusGroups = DISPLAY_GROUPS.map((group) => ({
+    ...group,
     entries: filteredRsvps
-      .filter((entry) => entry.status === status)
+      .filter((entry) => group.statuses.includes(entry.status))
       .sort(
         (a, b) =>
           toDate(a.createdAt).getTime() - toDate(b.createdAt).getTime()
@@ -223,13 +237,13 @@ export function EventRegistrationsDashboard({
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/70 p-6 shadow-sm sm:p-8">
         <div className="absolute inset-0 pattern-honeycomb opacity-30" />
         <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-amber/10 blur-3xl" />
 
-        <div className="relative space-y-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative space-y-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
@@ -239,7 +253,7 @@ export function EventRegistrationsDashboard({
                   className="text-2xl font-bold tracking-tight"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Inscrições do evento
+                  Inscritos do evento
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {event.title} · {eventDate} · {eventTime} ({event.timezone})
@@ -283,20 +297,7 @@ export function EventRegistrationsDashboard({
                 {reservedCount}/{event.maxCapacity} vagas
               </Badge>
             )}
-            <Badge variant="outline" className="gap-1">
-              <Users className="h-3 w-3" />
-              Total: {totalCount}
-            </Badge>
           </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-6 sm:p-8">
-        <div className="absolute inset-0 pattern-honeycomb opacity-30" />
-        <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-amber/10 blur-3xl" />
-
-        <div className="relative space-y-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative flex-1">
@@ -326,47 +327,39 @@ export function EventRegistrationsDashboard({
                   ))}
                 </SelectContent>
               </Select>
-              {(searchQuery.length > 0 || statusFilter !== "all") && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setStatusFilter("all");
-                  }}
-                >
-                  <X className="h-3.5 w-3.5" />
-                  Limpar
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={hasFilters ? "opacity-100" : "pointer-events-none opacity-0"}
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                }}
+              >
+                <X className="h-3.5 w-3.5" />
+                Limpar
+              </Button>
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground lg:text-right lg:min-w-[160px]">
               Mostrando {filteredCount} de {totalCount}
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-wrap gap-2">
             {[
-              { label: "Registrados", value: registeredCount, accent: "text-emerald-700" },
-              { label: "Pendentes de aprovação", value: pendingApprovalCount, accent: "text-slate-700" },
-              { label: "Pendentes de pagamento", value: pendingPaymentCount, accent: "text-amber-700" },
-              { label: "Pagamento falhou", value: paymentFailedCount, accent: "text-rose-700" },
-              { label: "Rejeitados", value: rejectedCount, accent: "text-rose-700" },
-              { label: "Não vão", value: notGoingCount, accent: "text-zinc-700" },
-              { label: "Total", value: totalCount, accent: "text-primary" },
+              { label: "Registrados", value: registeredCount, accent: "border-emerald-200 bg-emerald-50/70 text-emerald-800" },
+              { label: "Pendentes", value: pendingTotal, accent: "border-amber-200 bg-amber-50/70 text-amber-800" },
+              { label: "Pagamento falhou", value: paymentFailedCount, accent: "border-rose-200 bg-rose-50/70 text-rose-700" },
+              { label: "Rejeitados", value: rejectedCount, accent: "border-rose-200 bg-rose-50/70 text-rose-700" },
             ].map((item) => (
-              <div
+              <span
                 key={item.label}
-                className="rounded-xl border border-border/60 bg-background/80 p-4 shadow-sm"
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${item.accent}`}
               >
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {item.label}
-                </p>
-                <p className={`mt-2 text-2xl font-semibold ${item.accent}`}>
-                  {item.value}
-                </p>
-              </div>
+                {item.label}
+                <span className="text-sm font-bold">{item.value}</span>
+              </span>
             ))}
           </div>
 
@@ -381,12 +374,10 @@ export function EventRegistrationsDashboard({
           ) : (
             <div className="space-y-6">
               {statusGroups.map((group) => (
-                <div key={group.status} className="space-y-3">
+                <div key={group.key} className="space-y-3">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                        STATUS_ACCENTS[group.status]
-                      }`}
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold ${group.accent}`}
                     >
                       {group.label}
                     </span>
