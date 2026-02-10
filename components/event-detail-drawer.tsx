@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Drawer,
@@ -176,7 +177,18 @@ export function EventDetailDrawer({
                 {event.title}
               </DrawerTitle>
               {isOrganizer && (
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Ver inscritos"
+                  >
+                    <Link href={`/clubs/${clubId}/events/${event.id}/registrations`}>
+                      <Users className="size-4" />
+                      <span className="sr-only">Ver inscritos</span>
+                    </Link>
+                  </Button>
                   <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
                     <DialogTrigger asChild>
                       <Button
