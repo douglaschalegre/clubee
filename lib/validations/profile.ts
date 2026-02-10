@@ -9,4 +9,9 @@ export const profileSchema = z.object({
     .refine((value) => !value.includes("@"), {
       message: "O nome não pode conter @",
     }),
+  phone: z
+    .string()
+    .trim()
+    .max(30, "Telefone muito longo")
+    .optional(),
 });

@@ -25,10 +25,14 @@ export async function PATCH(request: Request) {
     return jsonError(validation.error.issues[0].message, 400);
   }
 
+  const normalizedPhone = validation.data.phone?.trim() ?? "";
+  const phone = normalizedPhone.length > 0 ? normalizedPhone : null;
+
   const updated = await prisma.user.update({
     where: { id: authResult.user.id },
     data: {
       name: validation.data.name,
+      phone,
       profileCompleted: true,
     },
   });
