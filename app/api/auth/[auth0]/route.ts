@@ -7,11 +7,18 @@ export async function GET(req: NextRequest) {
   // Handle login route with custom returnTo logic
   if (pathname.endsWith("/login")) {
     const returnTo = searchParams.get("returnTo");
+    const screenHint = searchParams.get("screen_hint") ?? undefined;
 
     // If returnTo is provided and is a relative path, use it
     const returnToPath = returnTo && returnTo.startsWith("/") ? returnTo : "/";
 
-    return auth0.startInteractiveLogin({ returnTo: returnToPath });
+    return auth0.startInteractiveLogin({
+      returnTo: returnToPath,
+      authorizationParameters: {
+        scope: "openid profile email",
+        ...(screenHint ? { screen_hint: screenHint } : {}),
+      },
+    });
   }
 
   // For all other auth routes (callback, logout, etc.), use middleware

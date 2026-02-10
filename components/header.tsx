@@ -22,6 +22,7 @@ export async function Header() {
         name: session.user.name,
         email: session.user.email,
         picture: session.user.picture,
+        accessToken: session.tokenSet?.accessToken,
       });
     } catch {
       dbUser = null;
@@ -30,7 +31,8 @@ export async function Header() {
 
   const displayName =
     dbUser?.name ?? session?.user?.name ?? session?.user?.email ?? "Usuário";
-  const avatarUrl = dbUser?.avatarUrl ?? session?.user?.picture ?? undefined;
+  const avatarUrl =
+    dbUser?.avatarUrl?.trim() || session?.user?.picture || undefined;
 
   return (
     <header className="relative border-b border-border/50 bg-card/80 backdrop-blur-sm">

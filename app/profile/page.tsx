@@ -23,6 +23,7 @@ export default async function ProfilePage({ searchParams }: PageProps) {
     name: session.user.name,
     email: session.user.email,
     picture: session.user.picture,
+    accessToken: session.tokenSet?.accessToken,
   });
 
   const isCompleted = dbUser.profileCompleted;

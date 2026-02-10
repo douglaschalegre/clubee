@@ -13,5 +13,6 @@ export const profileSchema = z.object({
     .string()
     .trim()
     .max(30, "Telefone muito longo")
+    .nullable()
     .optional(),
 });

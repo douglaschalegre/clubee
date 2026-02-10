@@ -6,10 +6,44 @@ interface Auth0Profile {
   name?: string;
   email?: string;
   picture?: string;
+  accessToken?: string;
 }
 
 function isDatabaseUser(auth0Id: string): boolean {
   return auth0Id.startsWith("auth0|");
+}
+
+async function fetchAuth0Picture(accessToken?: string): Promise<string | null> {
+  if (!accessToken) {
+    return null;
+  }
+
+  const domain = process.env.AUTH0_DOMAIN;
+  if (!domain) {
+    return null;
+  }
+
+  const baseUrl = domain.startsWith("http") ? domain : `https://${domain}`;
+
+  try {
+    const response = await fetch(`${baseUrl}/userinfo`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as { picture?: unknown };
+    if (typeof data.picture === "string") {
+      const trimmed = data.picture.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 /**
@@ -18,6 +52,8 @@ function isDatabaseUser(auth0Id: string): boolean {
  */
 export async function findOrCreateUser(profile: Auth0Profile): Promise<User> {
   const { sub: auth0Id, name, email, picture } = profile;
+  let normalizedPicture = typeof picture === "string" ? picture.trim() : "";
+  let hasPicture = normalizedPicture.length > 0;
 
   if (!email) {
     throw new Error("Auth0 profile missing email");
@@ -26,6 +62,14 @@ export async function findOrCreateUser(profile: Auth0Profile): Promise<User> {
   const existing = await prisma.user.findUnique({
     where: { auth0Id },
   });
+
+  if (!hasPicture && (!existing || !existing.avatarUrl || existing.avatarUrl.trim().length === 0)) {
+    const fetchedPicture = await fetchAuth0Picture(profile.accessToken);
+    if (fetchedPicture) {
+      normalizedPicture = fetchedPicture;
+      hasPicture = true;
+    }
+  }
 
   const trimmedName = name?.trim();
   const fallbackName = trimmedName && trimmedName.length > 0
@@ -39,7 +83,7 @@ export async function findOrCreateUser(profile: Auth0Profile): Promise<User> {
         auth0Id,
         name: fallbackName,
         email,
-        avatarUrl: picture,
+        avatarUrl: hasPicture ? normalizedPicture : undefined,
         profileCompleted: !databaseUser,
       },
     });
@@ -59,8 +103,8 @@ export async function findOrCreateUser(profile: Auth0Profile): Promise<User> {
     data.profileCompleted = true;
   }
 
-  if (!existing.avatarUrl && picture) {
-    data.avatarUrl = picture;
+  if (hasPicture && normalizedPicture !== existing.avatarUrl) {
+    data.avatarUrl = normalizedPicture;
   }
 
   if (Object.keys(data).length === 0) {

@@ -39,6 +39,7 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
       name: session.user.name,
       email: session.user.email,
       picture: session.user.picture,
+      accessToken: session.tokenSet?.accessToken,
     });
 
     return { user };
