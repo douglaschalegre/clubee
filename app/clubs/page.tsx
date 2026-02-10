@@ -2,11 +2,17 @@ import Link from "next/link";
 import { auth0 } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import { ClubCard } from "@/components/club-card";
+import { ClubsSearch } from "@/components/clubs-search";
 import { Plus, Sparkles } from "lucide-react";
 
-export default async function ClubsPage() {
+interface PageProps {
+  searchParams: Promise<{ q?: string }>;
+}
+
+export default async function ClubsPage({ searchParams }: PageProps) {
   const session = await auth0.getSession();
+  const { q } = await searchParams;
+  const initialQuery = typeof q === "string" ? q : "";
 
   const clubs = await prisma.club.findMany({
     orderBy: { createdAt: "desc" },
@@ -89,26 +95,7 @@ export default async function ClubsPage() {
           </div>
         </section>
       ) : (
-        <section>
-          <div className="mb-6 flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">
-              {clubs.length} {clubs.length === 1 ? "clube" : "clubes"}{" "}
-              disponíveis
-            </p>
-          </div>
-
-          <div className="stagger-in grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {clubs.map((club) => (
-              <ClubCard
-                key={club.id}
-                id={club.id}
-                name={club.name}
-                description={club.description}
-                imageUrl={club.imageUrl}
-              />
-            ))}
-          </div>
-        </section>
+        <ClubsSearch clubs={clubs} initialQuery={initialQuery} />
       )}
     </div>
   );
