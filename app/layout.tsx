@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: "Clubee",
   description: "Crie clubes e publique eventos pagos ou gratuitos com RSVP.",
+  icons: {
+    icon: "/favicon.ico",
+  },
   openGraph: {
     type: "website",
     locale: "pt_BR",
