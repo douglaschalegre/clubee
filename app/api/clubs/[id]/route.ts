@@ -10,6 +10,7 @@ import { updateClubSchema } from "@/lib/validations/club";
 import { stripe } from "@/lib/stripe";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logAuditEvent } from "@/lib/audit";
+import { promiseAllLimit } from "@/lib/concurrency";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -163,7 +164,7 @@ export async function DELETE(request: Request, context: RouteContext) {
       select: { stripeSubscriptionId: true },
     });
 
-    for (const m of membershipsWithSubs) {
+    await promiseAllLimit(membershipsWithSubs, 5, async (m) => {
       if (m.stripeSubscriptionId) {
         try {
           await stripe.subscriptions.cancel(m.stripeSubscriptionId);
@@ -174,7 +175,7 @@ export async function DELETE(request: Request, context: RouteContext) {
           );
         }
       }
-    }
+    });
 
     await prisma.club.delete({
       where: { id: clubId },
