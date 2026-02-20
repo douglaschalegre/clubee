@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
-import { auth0 } from "@/lib/auth0";
-import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import { jsonError, jsonSuccess, requireAuth, isErrorResponse } from "@/lib/api-utils";
 import {
   RESERVED_RSVP_STATUSES,
   isReservedStatus,
@@ -13,20 +12,14 @@ interface RouteContext {
 
 export async function POST(request: Request, context: RouteContext) {
   const { id: clubId, eventId } = await context.params;
-  const session = await auth0.getSession();
 
-  if (!session?.user?.sub) {
-    return jsonError("Não autorizado", 401);
+  const authResult = await requireAuth();
+
+  if (isErrorResponse(authResult)) {
+    return authResult;
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { auth0Id: session.user.sub },
-    select: { id: true },
-  });
-
-  if (!dbUser) {
-    return jsonError("Não autorizado", 401);
-  }
+  const { user: dbUser } = authResult;
 
   const rateLimitResponse = checkRateLimit({
     request,
