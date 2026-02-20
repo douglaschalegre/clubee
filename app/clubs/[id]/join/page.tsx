@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { auth0 } from "@/lib/auth0";
+import { requirePageAuth } from "@/lib/auth0";
 import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { ClubAvatar } from "@/components/club-avatar";
@@ -14,25 +14,11 @@ interface PageProps {
 
 export default async function JoinClubPage({ params }: PageProps) {
   const { id } = await params;
-  const session = await auth0.getSession();
 
-  // Require login
-  if (!session) {
-    redirect("/auth/login");
-  }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { auth0Id: session.user.sub },
-    select: { id: true, profileCompleted: true },
+  const { user: dbUser } = await requirePageAuth({
+    returnUrl: `/clubs/${id}/join`,
+    requireProfileCompleted: true,
   });
-
-  if (!dbUser) {
-    redirect("/auth/login");
-  }
-
-  if (!dbUser.profileCompleted) {
-    redirect(`/profile?returnTo=${encodeURIComponent(`/clubs/${id}/join`)}`);
-  }
 
   // Fetch club with pricing and organizer connect info
   const club = await prisma.club.findUnique({
