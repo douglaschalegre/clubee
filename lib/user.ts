@@ -63,7 +63,10 @@ export async function findOrCreateUser(profile: Auth0Profile): Promise<User> {
     where: { auth0Id },
   });
 
-  if (!hasPicture && (!existing || !existing.avatarUrl || existing.avatarUrl.trim().length === 0)) {
+  // Optimization: Only fetch from Auth0 if we haven't checked before.
+  // We use "" (empty string) in the database to indicate "checked but no avatar found".
+  // null means "not checked/unknown".
+  if (!hasPicture && (!existing || existing.avatarUrl === null)) {
     const fetchedPicture = await fetchAuth0Picture(profile.accessToken);
     if (fetchedPicture) {
       normalizedPicture = fetchedPicture;
@@ -83,7 +86,8 @@ export async function findOrCreateUser(profile: Auth0Profile): Promise<User> {
         auth0Id,
         name: fallbackName,
         email,
-        avatarUrl: hasPicture ? normalizedPicture : undefined,
+        // If we found a picture, use it. If not, store "" to indicate we checked.
+        avatarUrl: hasPicture ? normalizedPicture : "",
         profileCompleted: !databaseUser,
       },
     });
@@ -105,6 +109,9 @@ export async function findOrCreateUser(profile: Auth0Profile): Promise<User> {
 
   if (hasPicture && normalizedPicture !== existing.avatarUrl) {
     data.avatarUrl = normalizedPicture;
+  } else if (!hasPicture && existing.avatarUrl === null) {
+    // If we checked (fetched) and found nothing, update null -> "" to avoid future checks.
+    data.avatarUrl = "";
   }
 
   if (Object.keys(data).length === 0) {
