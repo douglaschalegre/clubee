@@ -11,6 +11,13 @@ interface RouteContext {
   params: Promise<{ id: string; eventId: string }>;
 }
 
+const SAFE_RSVP_SELECT = {
+  id: true,
+  status: true,
+  eventId: true,
+  userId: true,
+} as const;
+
 export async function POST(request: Request, context: RouteContext) {
   const { id: clubId, eventId } = await context.params;
   const session = await auth0.getSession();
@@ -90,6 +97,7 @@ export async function POST(request: Request, context: RouteContext) {
         where: { eventId_userId: { eventId, userId: dbUser.id } },
         create: { eventId, userId: dbUser.id, status },
         update: { status },
+        select: SAFE_RSVP_SELECT,
       });
       return jsonSuccess({ rsvp, status: "not_going" });
     } catch (error) {
@@ -140,6 +148,7 @@ export async function POST(request: Request, context: RouteContext) {
           existingRsvp ??
           (await client.eventRsvp.findUnique({
             where: { eventId_userId: { eventId, userId: dbUser.id } },
+            select: SAFE_RSVP_SELECT,
           }));
 
         if (existing && approvalLockStatuses.has(existing.status)) {
@@ -166,6 +175,7 @@ export async function POST(request: Request, context: RouteContext) {
             rejectedAt: null,
             rejectionReason: null,
           },
+          select: SAFE_RSVP_SELECT,
         });
         return {
           rsvp,
@@ -193,6 +203,7 @@ export async function POST(request: Request, context: RouteContext) {
             rejectedAt: null,
             rejectionReason: null,
           },
+          select: SAFE_RSVP_SELECT,
         });
         return {
           rsvp,
@@ -211,6 +222,7 @@ export async function POST(request: Request, context: RouteContext) {
           update: {
             status: "pending_payment",
           },
+          select: SAFE_RSVP_SELECT,
         });
         return {
           rsvp,
@@ -228,6 +240,7 @@ export async function POST(request: Request, context: RouteContext) {
         update: {
           status: "going",
         },
+        select: SAFE_RSVP_SELECT,
       });
       return { rsvp };
     };
@@ -239,6 +252,7 @@ export async function POST(request: Request, context: RouteContext) {
       const result = await prisma.$transaction(async (tx) => {
         const existing = await tx.eventRsvp.findUnique({
           where: { eventId_userId: { eventId, userId: dbUser.id } },
+          select: SAFE_RSVP_SELECT,
         });
         if (needsApproval && existing && approvalLockStatuses.has(existing.status)) {
           return { data: buildApprovalResponse(existing) };
