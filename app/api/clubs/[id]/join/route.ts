@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
-import { auth0 } from "@/lib/auth0";
-import { jsonError, jsonSuccess } from "@/lib/api-utils";
+import {
+  requireAuth,
+  isErrorResponse,
+  jsonError,
+  jsonSuccess,
+} from "@/lib/api-utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 interface RouteContext {
@@ -14,24 +18,17 @@ interface RouteContext {
  */
 export async function POST(request: Request, context: RouteContext) {
   const { id: clubId } = await context.params;
-  const session = await auth0.getSession();
 
-  if (!session?.user?.sub) {
-    return jsonError("Não autorizado", 401);
+  // Require authentication
+  const authResult = await requireAuth();
+  if (isErrorResponse(authResult)) {
+    return authResult;
   }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { auth0Id: session.user.sub },
-    select: { id: true },
-  });
-
-  if (!dbUser) {
-    return jsonError("Não autorizado", 401);
-  }
+  const { user } = authResult;
 
   const rateLimitResponse = checkRateLimit({
     request,
-    identifier: dbUser.id,
+    identifier: user.id,
     limit: 60,
   });
   if (rateLimitResponse) {
@@ -55,9 +52,9 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     // Create or reactivate membership
     const membership = await prisma.membership.upsert({
-      where: { userId_clubId: { userId: dbUser.id, clubId } },
+      where: { userId_clubId: { userId: user.id, clubId } },
       create: {
-        userId: dbUser.id,
+        userId: user.id,
         clubId,
         role: "member",
         status: "active",
