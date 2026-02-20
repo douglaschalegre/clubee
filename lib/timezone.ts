@@ -1,3 +1,28 @@
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+
+function getFormatter(
+  timezone: string,
+  withSeconds: boolean = false
+): Intl.DateTimeFormat {
+  const key = `${timezone}-${withSeconds}`;
+  if (!formatterCache.has(key)) {
+    formatterCache.set(
+      key,
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: withSeconds ? "2-digit" : undefined,
+        hour12: false,
+      })
+    );
+  }
+  return formatterCache.get(key)!;
+}
+
 /**
  * Convert a naive datetime (no offset) + IANA timezone to a UTC Date.
  *
@@ -11,16 +36,7 @@ export function naiveToUTC(date: string, time: string, timezone: string): Date {
   const refUTC = new Date(naive + "Z");
 
   // Format that UTC instant in the target timezone
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(refUTC);
+  const parts = getFormatter(timezone, true).formatToParts(refUTC);
 
   const get = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((p) => p.type === type)!.value;
@@ -38,16 +54,7 @@ export function naiveToUTC(date: string, time: string, timezone: string): Date {
   const result = new Date(refUTC.getTime() + offsetMs);
 
   // Second pass to handle DST edge cases: recalculate offset at the result time
-  const parts2 = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(result);
+  const parts2 = getFormatter(timezone, true).formatToParts(result);
 
   const get2 = (type: Intl.DateTimeFormatPartTypes) =>
     parts2.find((p) => p.type === type)!.value;
@@ -86,15 +93,7 @@ export function utcToLocal(
   utcDate: Date,
   timezone: string
 ): { date: string; time: string } {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(utcDate);
+  const parts = getFormatter(timezone, false).formatToParts(utcDate);
 
   const get = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((p) => p.type === type)!.value;
