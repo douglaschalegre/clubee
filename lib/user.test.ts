@@ -152,4 +152,63 @@ describe("findOrCreateUser optimization", () => {
           data: expect.objectContaining({ avatarUrl: "" })
       }));
   });
+
+  it("should NOT update avatar to empty string if fetch fails (transient error)", async () => {
+    // Setup: User exists but has null avatar
+    mockPrisma.user.findUnique.mockResolvedValue({
+     id: "1",
+     auth0Id: "auth0|123",
+     email: "test@example.com",
+     avatarUrl: null,
+     profileCompleted: true,
+   });
+
+   // Mock fetch to fail (e.g. 500)
+   mockFetch.mockResolvedValue({
+       ok: false,
+   });
+
+   await findOrCreateUser({
+     sub: "auth0|123",
+     email: "test@example.com",
+     accessToken: "token",
+   });
+
+   // Expect fetch to be called
+   expect(mockFetch).toHaveBeenCalled();
+
+   // Expect NO update to be called because we want to retry later
+   expect(mockPrisma.user.update).not.toHaveBeenCalled();
+ });
+
+ it("should NOT use empty string for avatarUrl when creating new user if fetch fails", async () => {
+     // Setup: User does not exist
+     mockPrisma.user.findUnique.mockResolvedValue(null);
+
+     // Mock fetch to fail
+     mockFetch.mockRejectedValue(new Error("Network Error"));
+
+     // Mock create to return the created user
+     mockPrisma.user.create.mockResolvedValue({
+         id: "2",
+         auth0Id: "auth0|456",
+         email: "new@example.com",
+         avatarUrl: null,
+         profileCompleted: false,
+     });
+
+     await findOrCreateUser({
+       sub: "auth0|456",
+       email: "new@example.com",
+       accessToken: "token",
+     });
+
+     expect(mockFetch).toHaveBeenCalled();
+
+     // Verify create call does NOT use "" for avatarUrl
+     // It should use undefined (which translates to null in db, meaning unchecked)
+     expect(mockPrisma.user.create).toHaveBeenCalledWith(expect.objectContaining({
+         data: expect.not.objectContaining({ avatarUrl: "" })
+     }));
+ });
 });
